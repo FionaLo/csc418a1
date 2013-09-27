@@ -72,7 +72,7 @@ int animation_frame = 0;      // Specify current frame of animation
 const float JOINT_MIN = -45.0f;
 const float JOINT_MAX =  45.0f;
 float joint_rot = 0.0f;
-
+float beak_trans = 0.0f;
 //////////////////////////////////////////////////////
 // TODO: Add additional joint parameters here
 //////////////////////////////////////////////////////
@@ -193,6 +193,12 @@ void initGlui()
         = glui->add_spinner("Joint", GLUI_SPINNER_FLOAT, &joint_rot);
     joint_spinner->set_speed(0.1);
     joint_spinner->set_float_limits(JOINT_MIN, JOINT_MAX, GLUI_LIMIT_CLAMP);
+
+    GLUI_Spinner *beak_spinner 
+        = glui->add_spinner("Beak", GLUI_SPINNER_FLOAT, &beak_trans);
+    beak_spinner->set_speed(0.1);
+    beak_spinner->set_float_limits(JOINT_MIN, JOINT_MAX, GLUI_LIMIT_CLAMP);
+
 
     ///////////////////////////////////////////////////////////
     // TODO: 
@@ -320,7 +326,15 @@ void display(void)
             // Draw the square for the body
             drawSquare(1.0);
         glPopMatrix();
-        
+       
+	// Draw the beak
+	glPushMatrix();
+	   glTranslatef(0.0, beak_trans, 0.0);
+	   glColor3f(1.0, 0.0, 0.0);
+	   glScalef(200.0, 10.0, 0.0);
+	   drawSquare(1.0);
+	glPopMatrix();
+ 
         // Draw the 'arm'
 
         // Move the arm to the joint hinge
