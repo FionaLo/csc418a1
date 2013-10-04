@@ -100,6 +100,9 @@ void GLUI_Control(int id);
 // Functions to help draw the object
 void drawSquare(float size);
 void drawShape(float width, float height, float delta, float slant_percentage);
+void shear(float shear_x, float shear_y);
+
+
 
 // Return the current system clock (in seconds)
 double getTime();
@@ -200,7 +203,8 @@ void initGlui()
         spinner->set_speed(0.1);\
         spinner->set_float_limits(min, max, GLUI_LIMIT_CLAMP);\
     }
-    SPINNER(beak, beak_trans, 0, 10)
+    const float MAX_BEAK_OPEN = 10;
+    SPINNER(beak, beak_trans, 0, MAX_BEAK_OPEN)
     
 
 
@@ -309,16 +313,20 @@ void display(void)
     //   apply the appropriate transformation matrice and
     //   render the individual body parts.
     ///////////////////////////////////////////////////////////
-
     const float BEAK_WIDTH = 200;
     const float BEAK_HEIGHT = 50;
     const float BEAK_BOTTOM_HEIGHT = 10;
 
-    drawShape(BEAK_WIDTH, BEAK_HEIGHT, 2, 0.4);
     glPushMatrix();
-        glTranslatef(0, - BEAK_HEIGHT / 2 - BEAK_BOTTOM_HEIGHT / 2 - beak_trans, 0);
-        glScalef(BEAK_WIDTH, BEAK_BOTTOM_HEIGHT, 1);
-        drawSquare(1);
+        // drawShape(BEAK_WIDTH, BEAK_HEIGHT, 2, 0.4);
+        // glPushMatrix();
+        //     glTranslatef(0, - BEAK_HEIGHT / 2 - BEAK_BOTTOM_HEIGHT / 2 - beak_trans, 0);
+        //     glScalef(BEAK_WIDTH, BEAK_BOTTOM_HEIGHT, 1);
+        //     drawSquare(1);
+        // glPopMatrix();
+
+    glRotatef(90, 0, 0, 1);
+    drawShape(100, 50, -2, 0.3);
     glPopMatrix();
 
     // glPushMatrix();
@@ -418,4 +426,13 @@ void drawShape(float width, float height, float delta, float slant_percentage) {
         glVertex2d(-h_width, h_height - slant_percentage * height);
         glVertex2d(-h_width + delta, -h_height);
     glEnd();   
+}
+
+void shear(float shear_x, float shear_y) {
+    float shear[] = { 
+       1, shear_y, 0, 0, 
+       shear_x, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1 };
+    glMultMatrixf(shear);
 }
