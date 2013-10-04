@@ -194,10 +194,14 @@ void initGlui()
     joint_spinner->set_speed(0.1);
     joint_spinner->set_float_limits(JOINT_MIN, JOINT_MAX, GLUI_LIMIT_CLAMP);
 
-    GLUI_Spinner *beak_spinner 
-        = glui->add_spinner("Beak", GLUI_SPINNER_FLOAT, &beak_trans);
-    beak_spinner->set_speed(0.1);
-    beak_spinner->set_float_limits(JOINT_MIN, JOINT_MAX, GLUI_LIMIT_CLAMP);
+
+    #define SPINNER(name, variable, min, max) { \
+        GLUI_Spinner *spinner = glui->add_spinner(#name, GLUI_SPINNER_FLOAT, &variable);\
+        spinner->set_speed(0.1);\
+        spinner->set_float_limits(min, max, GLUI_LIMIT_CLAMP);\
+    }
+    SPINNER(beak, beak_trans, 0, 10)
+    
 
 
     ///////////////////////////////////////////////////////////
