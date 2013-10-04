@@ -99,7 +99,7 @@ void GLUI_Control(int id);
 
 // Functions to help draw the object
 void drawSquare(float size);
-
+void drawShape(float width, float height, float delta, float slant_percentage);
 
 // Return the current system clock (in seconds)
 double getTime();
@@ -306,55 +306,72 @@ void display(void)
     //   render the individual body parts.
     ///////////////////////////////////////////////////////////
 
-    // Draw our hinged object
-    const float BODY_WIDTH = 30.0f;
-    const float BODY_LENGTH = 50.0f;
-    const float ARM_LENGTH = 50.0f;
-    const float ARM_WIDTH = 10.0f;
+    
 
-    // Push the current transformation matrix on the stack
-    glPushMatrix();
+    // glPushMatrix();
+    //     drawTorso();
+    //     glPushMatrix();
+    //         drawFin();
+    //         drawUpperLeftLeg();
+    //         glPushMatrix();
+    //             drawLowerLeftLeg();
+    //         glPopMatrix();
+    //         drawUpperRightLeg();
+    //         glPushMatrix();
+    //             drawLowerRightLeg();
+    //         glPopMatrix();
+    //         drawHead();
+    //         glPushMatrix();
+    //             drawEye();
+    //             drawBeak();
+    //             glPushMatrix();
+    //                 drawBottomBeak();
+    //             glPopMatrix();
+    //         glPopMatrix();
+    //     glPopMatrix();
+    // glPopMatrix();
+
+ //    // Draw our hinged object
+ //    const float BODY_WIDTH = 30.0f;
+ //    const float BODY_LENGTH = 50.0f;
+ //    const float ARM_LENGTH = 50.0f;
+ //    const float ARM_WIDTH = 10.0f;
+
+ //    // Push the current transformation matrix on the stack
+ //    glPushMatrix();
         
-        // Draw the 'body'
-        glPushMatrix();
-            // Scale square to size of body
-            glScalef(BODY_WIDTH, BODY_LENGTH, 1.0);
+ //        // Draw the 'body'
+ //        glPushMatrix();
+ //            // Scale square to size of body
+ //            glScalef(BODY_WIDTH, BODY_LENGTH, 1.0);
 
-            // Set the colour to green
-            glColor3f(0.0, 1.0, 0.0);
+ //            // Set the colour to green
+ //            glColor3f(0.0, 1.0, 0.0);
 
-            // Draw the square for the body
-            drawSquare(1.0);
-        glPopMatrix();
-       
-	// Draw the beak
-	glPushMatrix();
-	   glTranslatef(0.0, beak_trans, 0.0);
-	   glColor3f(1.0, 0.0, 0.0);
-	   glScalef(200.0, 10.0, 0.0);
-	   drawSquare(1.0);
-	glPopMatrix();
+ //            // Draw the square for the body
+ //            drawSquare(1.0);
+ //        glPopMatrix();
  
-        // Draw the 'arm'
+ //        // Draw the 'arm'
 
-        // Move the arm to the joint hinge
-        glTranslatef(0.0, -BODY_LENGTH/2 + ARM_WIDTH, 0.0);
+ //        // Move the arm to the joint hinge
+ //        glTranslatef(0.0, -BODY_LENGTH/2 + ARM_WIDTH, 0.0);
 
-        // Rotate along the hinge
-        glRotatef(joint_rot, 0.0, 0.0, 1.0);
+ //        // Rotate along the hinge
+ //        glRotatef(joint_rot, 0.0, 0.0, 1.0);
 
-        // Scale the size of the arm
-        glScalef(ARM_WIDTH, ARM_LENGTH, 1.0);
+ //        // Scale the size of the arm
+ //        glScalef(ARM_WIDTH, ARM_LENGTH, 1.0);
 
-        // Move to center location of arm, under previous rotation
-        glTranslatef(0.0, -0.5, 0.0);
+ //        // Move to center location of arm, under previous rotation
+ //        glTranslatef(0.0, -0.5, 0.0);
 
-        // Draw the square for the arm
-        glColor3f(1.0, 0.0, 0.0);
-        drawSquare(1.0);
+ //        // Draw the square for the arm
+ //        glColor3f(1.0, 0.0, 0.0);
+ //        drawSquare(1.0);
 
-    // Retrieve the previous state of the transformation stack
-    glPopMatrix();
+ //    // Retrieve the previous state of the transformation stack
+ //    glPopMatrix();
 
 
     // Execute any GL functions that are in the queue just to be safe
@@ -378,3 +395,14 @@ void drawSquare(float width)
     glEnd();
 }
 
+void drawShape(float width, float height, float delta, float slant_percentage) {
+    float h_width = width / 2;
+    float h_height = height / 2;
+    // Draw the square
+    glBegin(GL_POLYGON);
+        glVertex2d(h_width, -h_height);
+        glVertex2d(h_width - delta, h_height);
+        glVertex2d(-h_width, h_height - slant_percentage * height);
+        glVertex2d(-h_width + delta, -h_height);
+    glEnd();   
+}
