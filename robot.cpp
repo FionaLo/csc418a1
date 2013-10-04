@@ -306,7 +306,16 @@ void display(void)
     //   render the individual body parts.
     ///////////////////////////////////////////////////////////
 
-    
+    const float BEAK_WIDTH = 200;
+    const float BEAK_HEIGHT = 50;
+    const float BEAK_BOTTOM_HEIGHT = 10;
+
+    drawShape(BEAK_WIDTH, BEAK_HEIGHT, 2, 0.4);
+    glPushMatrix();
+        glTranslatef(0, - BEAK_HEIGHT / 2 - BEAK_BOTTOM_HEIGHT / 2 - beak_trans, 0);
+        glScalef(BEAK_WIDTH, BEAK_BOTTOM_HEIGHT, 1);
+        drawSquare(1);
+    glPopMatrix();
 
     // glPushMatrix();
     //     drawTorso();
@@ -387,7 +396,7 @@ void display(void)
 void drawSquare(float width)
 {
     // Draw the square
-    glBegin(GL_POLYGON);
+    glBegin(GL_LINE_LOOP);
     glVertex2d(-width/2, -width/2);
     glVertex2d(width/2, -width/2);
     glVertex2d(width/2, width/2);
@@ -399,7 +408,7 @@ void drawShape(float width, float height, float delta, float slant_percentage) {
     float h_width = width / 2;
     float h_height = height / 2;
     // Draw the square
-    glBegin(GL_POLYGON);
+    glBegin(GL_LINE_LOOP);
         glVertex2d(h_width, -h_height);
         glVertex2d(h_width - delta, h_height);
         glVertex2d(-h_width, h_height - slant_percentage * height);
