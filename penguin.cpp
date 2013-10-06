@@ -79,6 +79,7 @@ float left_leg_upper_rot = 0.0f;
 float left_leg_lower_rot = 0.0f;
 float right_leg_upper_rot = 0.0f;
 float right_leg_lower_rot = 0.0f;
+
 //////////////////////////////////////////////////////
 // TODO: Add additional joint parameters here
 //////////////////////////////////////////////////////
@@ -338,6 +339,8 @@ void display(void)
     const float FIN_WIDTH = 100;
     const float UPPER_LEG_HEIGHT = 140;
     const float UPPER_LEG_WIDTH = 50;
+    const float LOWER_LEG_LENGTH = 160;
+    const float LOWER_LEG_THINKNESS = 30; 
 
     glPushMatrix();
         drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
@@ -352,21 +355,25 @@ void display(void)
                 glRotatef(10, 0, 0, 1);
                 jointAt(0, - UPPER_LEG_HEIGHT * 0.4, right_leg_upper_rot);
                 drawTrapazoid(UPPER_LEG_HEIGHT, UPPER_LEG_WIDTH, 0.8);
+                    glPushMatrix();
+                        glTranslatef(-(LOWER_LEG_LENGTH - UPPER_LEG_WIDTH) / 2, -(UPPER_LEG_HEIGHT - LOWER_LEG_THINKNESS) / 2 + 5, 0);
+                        jointAt(-LOWER_LEG_LENGTH * 0.4, 0, right_leg_lower_rot);
+                        glScalef(LOWER_LEG_LENGTH, LOWER_LEG_THINKNESS, 1);
+                        drawSquare(1);
+                    glPopMatrix();
             glPopMatrix();
             glPushMatrix();
                 glTranslatef(-TORSO_WIDTH * 0.25, -TORSO_HEIGHT * 0.45, 0);
                 glRotatef(-15, 0, 0, 1);
                 jointAt(0, - UPPER_LEG_HEIGHT * 0.4, left_leg_upper_rot);
                 drawTrapazoid(UPPER_LEG_HEIGHT, UPPER_LEG_WIDTH, 0.8);
+                    glPushMatrix();
+                        glTranslatef(-(LOWER_LEG_LENGTH - UPPER_LEG_WIDTH) / 2, -(UPPER_LEG_HEIGHT - LOWER_LEG_THINKNESS) / 2 + 5, 0);
+                        jointAt(-LOWER_LEG_LENGTH * 0.4, 0, left_leg_lower_rot);
+                        glScalef(LOWER_LEG_LENGTH, LOWER_LEG_THINKNESS, 1);
+                        drawSquare(1);
+                    glPopMatrix();
             glPopMatrix();
-            // drawUpperLeftLeg();
-            // glPushMatrix();
-            //     drawLowerLeftLeg();
-            // glPopMatrix();
-            // drawUpperRightLeg();
-            // glPushMatrix();
-            //     drawLowerRightLeg();
-            // glPopMatrix();
             glPushMatrix();
                 glTranslatef(0, TORSO_HEIGHT * 0.57, 0); // move to top of torso
                 jointAt(0, HEAD_HEIGHT * 0.4, head_rot);
