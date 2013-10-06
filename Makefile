@@ -42,13 +42,13 @@ LINKER	      = g++
 OBJ           = $(CPPSRCS:.cpp=.o) $(CSRCS:.c=.o)
 
 # Define name of target executable
-PROGRAM	          = robot
+PROGRAM	          = penguin
 
 # Define all C source files here
 CSRCS         =
 
 # Define all C++ source files here
-CPPSRCS       = robot.cpp
+CPPSRCS       = penguin.cpp
 
 ##############################################################################
 # Define additional rules that make should know about in order to compile our
