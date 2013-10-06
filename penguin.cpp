@@ -73,6 +73,8 @@ const float JOINT_MIN = -45.0f;
 const float JOINT_MAX =  45.0f;
 const float MAX_BEAK_OPEN = 10;
 const float HEAD_MAX_ROT = 10;
+const float UPPER_LEG_MAX_ROT = 30;
+const float LOWER_LEG_MAX_ROT = 20;
 
 float joint_rot = 0.0f;
 float beak_trans = 0.0f;
@@ -139,8 +141,8 @@ int main(int argc, char** argv)
     if(argc != 3) {
         printf("Usage: demo [width] [height]\n");
         printf("Using 300x200 window by default...\n");
-        Win[0] = 1000;
-        Win[1] = 750;
+        Win[0] = 1200;
+        Win[1] = 1200;
     } else {
         Win[0] = atoi(argv[1]);
         Win[1] = atoi(argv[2]);
@@ -262,12 +264,13 @@ void animate()
 {
     // Update geometry
     const double joint_rot_speed = 0.1;
-    double joint_rot_t = (sin(animation_frame*joint_rot_speed) + 1.0) / 2.0;
+    double sin_wave = (sin(animation_frame*joint_rot_speed) + 1.0) / 2.0;
+    double slow_sin_wave = (sin(animation_frame*joint_rot_speed/2) + 1.0) / 2.0;
+    double slowest_sin_wave = (sin(animation_frame*joint_rot_speed/4) + 1.0) / 2.0;
     double cos_wave = (cos(animation_frame*joint_rot_speed) + 1.0) / 2.0;
-    double head_wave = (sin(animation_frame*joint_rot_speed/2) + 1.0) / 2.0;
-    double walk_wave = (cos(animation_frame*joint_rot_speed/4) + 1.0) / 2.0;
+    static bool jump = false;
 
-    joint_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
+    // joint_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
     
     ///////////////////////////////////////////////////////////
     // TODO:
@@ -275,14 +278,23 @@ void animate()
     //   Note: Nothing should be drawn in this function!  OpenGL drawing
     //   should only happen in the display() callback.
     ///////////////////////////////////////////////////////////
-    beak_trans = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
-    head_rot = head_wave * -HEAD_MAX_ROT + (1 - head_wave) * HEAD_MAX_ROT;
-    fin_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
-    left_leg_upper_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
-    left_leg_lower_rot = joint_rot_t * 0 + (1 - joint_rot_t) * JOINT_MAX;
-    right_leg_upper_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
-    right_leg_lower_rot = joint_rot_t * 0 + (1 - joint_rot_t) * JOINT_MAX;
-    penguin_horizontal_trans = walk_wave * JOINT_MIN * 5 + (1 - walk_wave) * JOINT_MAX * 5;
+    beak_trans = (1 - slowest_sin_wave) * MAX_BEAK_OPEN;
+    head_rot = slow_sin_wave * -HEAD_MAX_ROT + (1 - slow_sin_wave) * HEAD_MAX_ROT;
+    fin_rot = sin_wave * JOINT_MIN + (1 - sin_wave) * JOINT_MAX;
+    left_leg_upper_rot = cos_wave * -UPPER_LEG_MAX_ROT + (1 - cos_wave) * UPPER_LEG_MAX_ROT;
+    left_leg_lower_rot = cos_wave * -LOWER_LEG_MAX_ROT + (1 - cos_wave) * LOWER_LEG_MAX_ROT;
+    right_leg_upper_rot = sin_wave * -UPPER_LEG_MAX_ROT + (1 - sin_wave) * UPPER_LEG_MAX_ROT;
+    right_leg_lower_rot = sin_wave * -LOWER_LEG_MAX_ROT + (1 - sin_wave) * LOWER_LEG_MAX_ROT;
+    penguin_horizontal_trans -= 5;
+    if (penguin_horizontal_trans < -Win[0] / 2) { // offscreen
+        penguin_horizontal_trans = Win[0] / 2;
+        jump = !jump;
+        penguin_vertical_trans = 0;
+    }
+    if (jump) {
+        penguin_vertical_trans = (1 - cos_wave) * Win[1] / 8;
+    }
+    // penguin_vertical_trans = jump_wave * JOINT_MIN * 5 + (1 - jump_wave) * JOINT_MAX * 5;
 
     // Update user interface
     glui->sync_live();
@@ -360,9 +372,11 @@ void display(void)
 
     glPushMatrix();
         glTranslatef(penguin_horizontal_trans, penguin_vertical_trans, 0);
+        glColor3f(1.0, 1.0, 1.0);
         drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
         glPushMatrix();
             glPushMatrix();
+                glColor3f(0.5,  0.5, 0.5); // head is blue
                 glTranslatef(TORSO_WIDTH * 0.05, TORSO_HEIGHT * 0.1, 0);
                 jointAt(0, -FIN_HEIGHT * 0.4, fin_rot);
                 drawFin(FIN_HEIGHT, FIN_WIDTH);
@@ -392,10 +406,12 @@ void display(void)
                     glPopMatrix();
             glPopMatrix();
             glPushMatrix();
+                glColor3f(0.0, 0.0, 1.0); // head is blue
                 glTranslatef(0, TORSO_HEIGHT * 0.57, 0); // move to top of torso
                 jointAt(0, HEAD_HEIGHT * 0.4, head_rot);
                 drawHead(HEAD_HEIGHT, HEAD_WIDTH);
                 glTranslatef(- TORSO_WIDTH / 3, 0, 0);
+                glColor3f(1.0, 0.5, 0.0); // beak is orange
                 drawBeak(BEAK_HEIGHT, BEAK_WIDTH);
                 glPushMatrix();
                     glTranslatef(0, -BEAK_HEIGHT * 0.6 - beak_trans, 0);
@@ -405,49 +421,6 @@ void display(void)
             glPopMatrix();
         glPopMatrix();
     glPopMatrix();
-
- //    // Draw our hinged object
- //    const float BODY_WIDTH = 30.0f;
- //    const float BODY_LENGTH = 50.0f;
- //    const float ARM_LENGTH = 50.0f;
- //    const float ARM_WIDTH = 10.0f;
-
- //    // Push the current transformation matrix on the stack
- //    glPushMatrix();
-        
- //        // Draw the 'body'
- //        glPushMatrix();
- //            // Scale square to size of body
- //            glScalef(BODY_WIDTH, BODY_LENGTH, 1.0);
-
- //            // Set the colour to green
- //            glColor3f(0.0, 1.0, 0.0);
-
- //            // Draw the square for the body
- //            drawSquare(1.0);
- //        glPopMatrix();
- 
- //        // Draw the 'arm'
-
- //        // Move the arm to the joint hinge
- //        glTranslatef(0.0, -BODY_LENGTH/2 + ARM_WIDTH, 0.0);
-
- //        // Rotate along the hinge
- //        glRotatef(joint_rot, 0.0, 0.0, 1.0);
-
- //        // Scale the size of the arm
- //        glScalef(ARM_WIDTH, ARM_LENGTH, 1.0);
-
- //        // Move to center location of arm, under previous rotation
- //        glTranslatef(0.0, -0.5, 0.0);
-
- //        // Draw the square for the arm
- //        glColor3f(1.0, 0.0, 0.0);
- //        drawSquare(1.0);
-
- //    // Retrieve the previous state of the transformation stack
- //    glPopMatrix();
-
 
     // Execute any GL functions that are in the queue just to be safe
     glFlush();
@@ -508,7 +481,9 @@ void drawHead(const float height, const float width) {
             glVertex2d(-0.25 * width, 0.85 * height);
             glVertex2d(-0.37 * width, 0);
         glEnd();
+        glColor3f(1.0, 1.0, 1.0); // white outer eye
         drawCircle(-width * 0.1, 0.8 * height, 10, 100, false); // outer eye
+        glColor3f(0, 0, 0); // black inner eye
         drawCircle(-width * 0.11, 0.8 * height, 7, 100, true); // outer eye
     glPopMatrix();
 }
@@ -551,10 +526,14 @@ void drawCircle(float cx, float cy, float r, int num_segments, bool filled)
 }
 
 void jointAt(const float x, const float y, const float &variable) {
+    float currentColor[4];
+    glGetFloatv(GL_CURRENT_COLOR,currentColor);
+    glColor3f(1.0, 0.0, 0.0);
     glTranslatef(-x, -y, 0); // move origin back 
     glRotatef(variable, 0, 0, 1); // rotate around joint
     drawCircle(0, 0, 5, 100, false); // draw joint
     glTranslatef(x, y, 0); // move origin to joint
+    glColor3f(currentColor[0], currentColor[1], currentColor[2]);
 }
 
 void drawTrapazoid(const float height, const float width, const float upper_width_percentage) {
