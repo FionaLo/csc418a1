@@ -105,9 +105,10 @@ void drawShape(float width, float height, float delta, float slant_percentage);
 void drawTorso(const float height, const float width);
 void drawHead(const float height, const float width);
 void shear(float shear_x, float shear_y);
-void drawCircle(float cx, float cy, float r, int num_segments);
+void drawCircle(float cx, float cy, float r, int num_segments, bool filled);
 void drawBeak(const float height, const float width);
 void drawFin(const float height, const float width);
+void jointAt(const float x, const float y, const float &variable);
 // Return the current system clock (in seconds)
 double getTime();
 
@@ -331,10 +332,7 @@ void display(void)
         glPushMatrix();
             glPushMatrix();
                 glTranslatef(TORSO_WIDTH * 0.05, TORSO_HEIGHT * 0.1, 0);
-                glTranslatef(0, FIN_HEIGHT * 0.4, 0); // move origin back 
-                glRotatef(fin_rot, 0, 0, 1); // rotate around joint
-                drawCircle(0, 0, 5, 100); // draw joint
-                glTranslatef(0, - FIN_HEIGHT * 0.4, 0); // move origin to joint
+                jointAt(0, -FIN_HEIGHT * 0.4, fin_rot);
                 drawFin(FIN_HEIGHT, FIN_WIDTH);
             glPopMatrix();
             // drawUpperLeftLeg();
@@ -346,16 +344,10 @@ void display(void)
             //     drawLowerRightLeg();
             // glPopMatrix();
             glPushMatrix();
-                //     drawEye();
                 glTranslatef(0, TORSO_HEIGHT * 0.57, 0); // move to top of torso
-                glTranslatef(0, -HEAD_HEIGHT * 0.4, 0); // move origin back 
-                glRotatef(head_rot, 0, 0, 1); // rotate around joint
-                drawCircle(0, 0, 5, 100); // draw joint
-                glTranslatef(0, HEAD_HEIGHT * 0.4, 0); // move origin to joint
+                jointAt(0, HEAD_HEIGHT * 0.4, head_rot);
                 drawHead(HEAD_HEIGHT, HEAD_WIDTH);
-            glPopMatrix();
-            glPushMatrix();
-                glTranslatef(- TORSO_WIDTH / 3, TORSO_HEIGHT * 0.6, 0);
+                glTranslatef(- TORSO_WIDTH / 3, 0, 0);
                 drawBeak(BEAK_HEIGHT, BEAK_WIDTH);
                 glPushMatrix();
                     glTranslatef(0, -BEAK_HEIGHT * 0.6 - beak_trans, 0);
@@ -468,6 +460,8 @@ void drawHead(const float height, const float width) {
             glVertex2d(-0.25 * width, 0.85 * height);
             glVertex2d(-0.37 * width, 0);
         glEnd();
+        drawCircle(-width * 0.1, 0.8 * height, 10, 100, false); // outer eye
+        drawCircle(-width * 0.11, 0.8 * height, 7, 100, true); // outer eye
     glPopMatrix();
 }
 
@@ -491,9 +485,10 @@ void shear(float shear_x, float shear_y) {
     glMultMatrixf(shear);
 }
 
-void drawCircle(float cx, float cy, float r, int num_segments) 
+void drawCircle(float cx, float cy, float r, int num_segments, bool filled) 
 { 
-    glBegin(GL_LINE_LOOP); 
+    GLenum mode = filled ? GL_POLYGON : GL_LINE_LOOP;
+    glBegin(mode); 
     for(int i = 0; i < num_segments; i++) 
     { 
         float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);//get the current angle 
@@ -505,4 +500,11 @@ void drawCircle(float cx, float cy, float r, int num_segments)
 
     } 
     glEnd(); 
+}
+
+void jointAt(const float x, const float y, const float &variable) {
+    glTranslatef(-x, -y, 0); // move origin back 
+    glRotatef(variable, 0, 0, 1); // rotate around joint
+    drawCircle(0, 0, 5, 100, false); // draw joint
+    glTranslatef(x, y, 0); // move origin to joint
 }
