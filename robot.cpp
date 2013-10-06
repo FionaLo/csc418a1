@@ -73,6 +73,7 @@ const float JOINT_MIN = -45.0f;
 const float JOINT_MAX =  45.0f;
 float joint_rot = 0.0f;
 float beak_trans = 0.0f;
+float head_rot = 0.0f;
 //////////////////////////////////////////////////////
 // TODO: Add additional joint parameters here
 //////////////////////////////////////////////////////
@@ -100,6 +101,8 @@ void GLUI_Control(int id);
 // Functions to help draw the object
 void drawSquare(float size);
 void drawShape(float width, float height, float delta, float slant_percentage);
+void drawTorso(const float height, const float width);
+void drawHead(const float height, const float width);
 void shear(float shear_x, float shear_y);
 
 
@@ -123,8 +126,8 @@ int main(int argc, char** argv)
     if(argc != 3) {
         printf("Usage: demo [width] [height]\n");
         printf("Using 300x200 window by default...\n");
-        Win[0] = 300;
-        Win[1] = 200;
+        Win[0] = 500;
+        Win[1] = 750;
     } else {
         Win[0] = atoi(argv[1]);
         Win[1] = atoi(argv[2]);
@@ -205,7 +208,7 @@ void initGlui()
     }
     const float MAX_BEAK_OPEN = 10;
     SPINNER(beak, beak_trans, 0, MAX_BEAK_OPEN)
-    
+    SPINNER(head, head_rot, JOINT_MIN, JOINT_MAX);
 
 
     ///////////////////////////////////////////////////////////
@@ -316,41 +319,37 @@ void display(void)
     const float BEAK_WIDTH = 200;
     const float BEAK_HEIGHT = 50;
     const float BEAK_BOTTOM_HEIGHT = 10;
+    const float TORSO_HEIGHT = 520;
+    const float TORSO_WIDTH = 350;
+    const float HEAD_HEIGHT = 130;
+    const float HEAD_WIDTH = 160;
 
     glPushMatrix();
-        // drawShape(BEAK_WIDTH, BEAK_HEIGHT, 2, 0.4);
-        // glPushMatrix();
-        //     glTranslatef(0, - BEAK_HEIGHT / 2 - BEAK_BOTTOM_HEIGHT / 2 - beak_trans, 0);
-        //     glScalef(BEAK_WIDTH, BEAK_BOTTOM_HEIGHT, 1);
-        //     drawSquare(1);
-        // glPopMatrix();
-
-    glRotatef(90, 0, 0, 1);
-    drawShape(100, 50, -2, 0.3);
+        drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
+        glPushMatrix();
+            // drawFin();
+            // drawUpperLeftLeg();
+            // glPushMatrix();
+            //     drawLowerLeftLeg();
+            // glPopMatrix();
+            // drawUpperRightLeg();
+            // glPushMatrix();
+            //     drawLowerRightLeg();
+            // glPopMatrix();
+            glPushMatrix();
+                glTranslatef(0, TORSO_HEIGHT * 0.57, 0); // move to top of torso
+                glRotatef(head_rot, 0, 0, 1);
+                drawHead(HEAD_HEIGHT, HEAD_WIDTH);
+            glPopMatrix();
+            // glPushMatrix();
+            //     drawEye();
+            //     drawBeak();
+            //     glPushMatrix();
+            //         drawBottomBeak();
+            //     glPopMatrix();
+            // glPopMatrix();
+        glPopMatrix();
     glPopMatrix();
-
-    // glPushMatrix();
-    //     drawTorso();
-    //     glPushMatrix();
-    //         drawFin();
-    //         drawUpperLeftLeg();
-    //         glPushMatrix();
-    //             drawLowerLeftLeg();
-    //         glPopMatrix();
-    //         drawUpperRightLeg();
-    //         glPushMatrix();
-    //             drawLowerRightLeg();
-    //         glPopMatrix();
-    //         drawHead();
-    //         glPushMatrix();
-    //             drawEye();
-    //             drawBeak();
-    //             glPushMatrix();
-    //                 drawBottomBeak();
-    //             glPopMatrix();
-    //         glPopMatrix();
-    //     glPopMatrix();
-    // glPopMatrix();
 
  //    // Draw our hinged object
  //    const float BODY_WIDTH = 30.0f;
@@ -417,8 +416,8 @@ void drawSquare(float width)
 }
 
 void drawShape(float width, float height, float delta, float slant_percentage) {
-    float h_width = width / 2;
-    float h_height = height / 2;
+    const float h_width = width / 2;
+    const float h_height = height / 2;
     // Draw the square
     glBegin(GL_LINE_LOOP);
         glVertex2d(h_width, -h_height);
@@ -426,6 +425,35 @@ void drawShape(float width, float height, float delta, float slant_percentage) {
         glVertex2d(-h_width, h_height - slant_percentage * height);
         glVertex2d(-h_width + delta, -h_height);
     glEnd();   
+}
+
+void drawTorso(const float height, const float width) {
+    glPushMatrix();
+        glTranslatef(((0.65 - 0.35) * width) / 2, -height / 2, 0); // translate the object's center to the origin
+         glBegin(GL_LINE_LOOP);
+            // draw the head, with the origin being placed at the lowest vertex, at the right leg
+            glVertex2d(0, 0);
+            glVertex2d(0.35 * width, 0.21 * height);
+            glVertex2d(0.05 * width, height);
+            glVertex2d(-0.34 * width, height);
+            glVertex2d(-0.65 * width, 0.25 * height);
+            glVertex2d(-0.29 * width, 0.02 * height);
+        glEnd();
+    glPopMatrix();
+}
+
+void drawHead(const float height, const float width) {
+    glPushMatrix();
+        glTranslatef((-(0.63 - 0.37) / 2) * width, -height / 2, 0); // translate the object's center to the origin
+        glBegin(GL_LINE_LOOP);
+            // draw the head, with the origin being placed at the head's bottom, right under its highest point
+            glVertex2d(0.63 * width, 0);
+            glVertex2d(0.5 * width, 0.75 * height);
+            glVertex2d(0, height);
+            glVertex2d(-0.25 * width, 0.85 * height);
+            glVertex2d(-0.37 * width, 0);
+        glEnd();
+    glPopMatrix();
 }
 
 void shear(float shear_x, float shear_y) {
