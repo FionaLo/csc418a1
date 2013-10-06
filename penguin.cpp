@@ -91,6 +91,20 @@ float penguin_vertical_trans = 0.0f;
 // TODO: Add additional joint parameters here
 //////////////////////////////////////////////////////
 
+// Sizing variables
+const float TORSO_HEIGHT = 520;
+const float TORSO_WIDTH = 350;
+const float HEAD_HEIGHT = 130;
+const float HEAD_WIDTH = 160;
+const float BEAK_HEIGHT = 40;
+const float BEAK_WIDTH  = 110;
+const float FIN_HEIGHT = 200;
+const float FIN_WIDTH = 100;
+const float UPPER_LEG_HEIGHT = 140;
+const float UPPER_LEG_WIDTH = 50;
+const float LOWER_LEG_LENGTH = 160;
+const float LOWER_LEG_THINKNESS = 30; 
+
 
 
 // ***********  FUNCTION HEADER DECLARATIONS ****************
@@ -122,6 +136,7 @@ void drawBeak(const float height, const float width);
 void drawFin(const float height, const float width);
 void jointAt(const float x, const float y, const float &variable);
 void drawTrapazoid(const float height, const float width, const float upper_width_percentage);
+void drawLeg(const float &upper_rot_variable, const float &lower_rot_variable);
 // Return the current system clock (in seconds)
 double getTime();
 
@@ -357,18 +372,7 @@ void display(void)
     //   apply the appropriate transformation matrice and
     //   render the individual body parts.
     ///////////////////////////////////////////////////////////
-    const float TORSO_HEIGHT = 520;
-    const float TORSO_WIDTH = 350;
-    const float HEAD_HEIGHT = 130;
-    const float HEAD_WIDTH = 160;
-    const float BEAK_HEIGHT = 40;
-    const float BEAK_WIDTH  = 110;
-    const float FIN_HEIGHT = 200;
-    const float FIN_WIDTH = 100;
-    const float UPPER_LEG_HEIGHT = 140;
-    const float UPPER_LEG_WIDTH = 50;
-    const float LOWER_LEG_LENGTH = 160;
-    const float LOWER_LEG_THINKNESS = 30; 
+
 
     glPushMatrix();
         glTranslatef(penguin_horizontal_trans, penguin_vertical_trans, 0);
@@ -384,26 +388,12 @@ void display(void)
             glPushMatrix();
                 glTranslatef(TORSO_WIDTH * 0.18, -TORSO_HEIGHT * 0.5, 0);
                 glRotatef(10, 0, 0, 1);
-                jointAt(0, - UPPER_LEG_HEIGHT * 0.4, right_leg_upper_rot);
-                drawTrapazoid(UPPER_LEG_HEIGHT, UPPER_LEG_WIDTH, 0.8);
-                    glPushMatrix();
-                        glTranslatef(-(LOWER_LEG_LENGTH - UPPER_LEG_WIDTH) / 2, -(UPPER_LEG_HEIGHT - LOWER_LEG_THINKNESS) / 2 + 5, 0);
-                        jointAt(-LOWER_LEG_LENGTH * 0.4, 0, right_leg_lower_rot);
-                        glScalef(LOWER_LEG_LENGTH, LOWER_LEG_THINKNESS, 1);
-                        drawSquare(1);
-                    glPopMatrix();
+                drawLeg(right_leg_upper_rot, right_leg_lower_rot);
             glPopMatrix();
             glPushMatrix();
                 glTranslatef(-TORSO_WIDTH * 0.25, -TORSO_HEIGHT * 0.45, 0);
                 glRotatef(-15, 0, 0, 1);
-                jointAt(0, - UPPER_LEG_HEIGHT * 0.4, left_leg_upper_rot);
-                drawTrapazoid(UPPER_LEG_HEIGHT, UPPER_LEG_WIDTH, 0.8);
-                    glPushMatrix();
-                        glTranslatef(-(LOWER_LEG_LENGTH - UPPER_LEG_WIDTH) / 2, -(UPPER_LEG_HEIGHT - LOWER_LEG_THINKNESS) / 2 + 5, 0);
-                        jointAt(-LOWER_LEG_LENGTH * 0.4, 0, left_leg_lower_rot);
-                        glScalef(LOWER_LEG_LENGTH, LOWER_LEG_THINKNESS, 1);
-                        drawSquare(1);
-                    glPopMatrix();
+                drawLeg(left_leg_upper_rot, left_leg_lower_rot);
             glPopMatrix();
             glPushMatrix();
                 glColor3f(0.0, 0.0, 1.0); // head is blue
@@ -436,10 +426,10 @@ void drawSquare(float width)
 {
     // Draw the square
     glBegin(GL_LINE_LOOP);
-    glVertex2d(-width/2, -width/2);
-    glVertex2d(width/2, -width/2);
-    glVertex2d(width/2, width/2);
-    glVertex2d(-width/2, width/2);
+        glVertex2d(-width/2, -width/2);
+        glVertex2d(width/2, -width/2);
+        glVertex2d(width/2, width/2);
+        glVertex2d(-width/2, width/2);
     glEnd();
 }
 
@@ -546,4 +536,15 @@ void drawTrapazoid(const float height, const float width, const float upper_widt
         glVertex2d(-h_width, -h_height);
         glVertex2d(h_width, -h_height);
     glEnd();
+}
+
+void drawLeg(const float &upper_rot_variable, const float &lower_rot_variable) {
+    jointAt(0, - UPPER_LEG_HEIGHT * 0.4, upper_rot_variable);
+    drawTrapazoid(UPPER_LEG_HEIGHT, UPPER_LEG_WIDTH, 0.8);
+    glPushMatrix();
+        glTranslatef(-(LOWER_LEG_LENGTH - UPPER_LEG_WIDTH) / 2, -(UPPER_LEG_HEIGHT - LOWER_LEG_THINKNESS) / 2 + 5, 0);
+        jointAt(-LOWER_LEG_LENGTH * 0.4, 0, lower_rot_variable);
+        glScalef(LOWER_LEG_LENGTH, LOWER_LEG_THINKNESS, 1);
+        drawSquare(1);
+    glPopMatrix();
 }
