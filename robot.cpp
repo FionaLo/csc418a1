@@ -74,6 +74,7 @@ const float JOINT_MAX =  45.0f;
 float joint_rot = 0.0f;
 float beak_trans = 0.0f;
 float head_rot = 0.0f;
+float fin_rot = 0.0f;
 //////////////////////////////////////////////////////
 // TODO: Add additional joint parameters here
 //////////////////////////////////////////////////////
@@ -105,8 +106,8 @@ void drawTorso(const float height, const float width);
 void drawHead(const float height, const float width);
 void shear(float shear_x, float shear_y);
 void drawCircle(float cx, float cy, float r, int num_segments);
-
-
+void drawBeak(const float height, const float width);
+void drawFin(const float height, const float width);
 // Return the current system clock (in seconds)
 double getTime();
 
@@ -209,7 +210,7 @@ void initGlui()
     const float MAX_BEAK_OPEN = 10;
     SPINNER(beak, beak_trans, 0, MAX_BEAK_OPEN)
     SPINNER(head, head_rot, JOINT_MIN, JOINT_MAX);
-
+    SPINNER(fin, fin_rot, JOINT_MIN, JOINT_MAX);
 
     ///////////////////////////////////////////////////////////
     // TODO: 
@@ -316,18 +317,26 @@ void display(void)
     //   apply the appropriate transformation matrice and
     //   render the individual body parts.
     ///////////////////////////////////////////////////////////
-    const float BEAK_WIDTH = 200;
-    const float BEAK_HEIGHT = 50;
-    const float BEAK_BOTTOM_HEIGHT = 10;
     const float TORSO_HEIGHT = 520;
     const float TORSO_WIDTH = 350;
     const float HEAD_HEIGHT = 130;
     const float HEAD_WIDTH = 160;
+    const float BEAK_HEIGHT = 40;
+    const float BEAK_WIDTH  = 110;
+    const float FIN_HEIGHT = 200;
+    const float FIN_WIDTH = 100;
 
     glPushMatrix();
         drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
         glPushMatrix();
-            // drawFin();
+            glPushMatrix();
+                glTranslatef(TORSO_WIDTH * 0.05, TORSO_HEIGHT * 0.1, 0);
+                glTranslatef(0, FIN_HEIGHT * 0.4, 0); // move origin back 
+                glRotatef(fin_rot, 0, 0, 1); // rotate around joint
+                drawCircle(0, 0, 5, 100); // draw joint
+                glTranslatef(0, - FIN_HEIGHT * 0.4, 0); // move origin to joint
+                drawFin(FIN_HEIGHT, FIN_WIDTH);
+            glPopMatrix();
             // drawUpperLeftLeg();
             // glPushMatrix();
             //     drawLowerLeftLeg();
@@ -337,20 +346,23 @@ void display(void)
             //     drawLowerRightLeg();
             // glPopMatrix();
             glPushMatrix();
+                //     drawEye();
                 glTranslatef(0, TORSO_HEIGHT * 0.57, 0); // move to top of torso
-                glTranslatef(0, -HEAD_HEIGHT * 0.4, 0); // move to joint
-                glRotatef(head_rot, 0, 0, 1);
-                drawCircle(0, 0, 5, 100);
-                glTranslatef(0, HEAD_HEIGHT * 0.4, 0); // move to joint
+                glTranslatef(0, -HEAD_HEIGHT * 0.4, 0); // move origin back 
+                glRotatef(head_rot, 0, 0, 1); // rotate around joint
+                drawCircle(0, 0, 5, 100); // draw joint
+                glTranslatef(0, HEAD_HEIGHT * 0.4, 0); // move origin to joint
                 drawHead(HEAD_HEIGHT, HEAD_WIDTH);
             glPopMatrix();
-            // glPushMatrix();
-            //     drawEye();
-            //     drawBeak();
-            //     glPushMatrix();
-            //         drawBottomBeak();
-            //     glPopMatrix();
-            // glPopMatrix();
+            glPushMatrix();
+                glTranslatef(- TORSO_WIDTH / 3, TORSO_HEIGHT * 0.6, 0);
+                drawBeak(BEAK_HEIGHT, BEAK_WIDTH);
+                glPushMatrix();
+                    glTranslatef(0, -BEAK_HEIGHT * 0.6 - beak_trans, 0);
+                    glScalef(BEAK_WIDTH, 10, 1);
+                    drawSquare(1);
+                glPopMatrix();
+            glPopMatrix();
         glPopMatrix();
     glPopMatrix();
 
@@ -456,6 +468,17 @@ void drawHead(const float height, const float width) {
             glVertex2d(-0.25 * width, 0.85 * height);
             glVertex2d(-0.37 * width, 0);
         glEnd();
+    glPopMatrix();
+}
+
+void drawBeak(const float height, const float width) {
+    drawShape(width, height, 2, 0.6);
+}
+
+void drawFin(const float height, const float width) {
+    glPushMatrix();
+        glRotatef(90, 0, 0, 1);
+        drawShape(height, width, 2, 0.6);
     glPopMatrix();
 }
 
