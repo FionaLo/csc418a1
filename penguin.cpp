@@ -71,6 +71,9 @@ int animation_frame = 0;      // Specify current frame of animation
 // Joint parameters
 const float JOINT_MIN = -45.0f;
 const float JOINT_MAX =  45.0f;
+const float MAX_BEAK_OPEN = 10;
+const float HEAD_MAX_ROT = 10;
+
 float joint_rot = 0.0f;
 float beak_trans = 0.0f;
 float head_rot = 0.0f;
@@ -79,6 +82,8 @@ float left_leg_upper_rot = 0.0f;
 float left_leg_lower_rot = 0.0f;
 float right_leg_upper_rot = 0.0f;
 float right_leg_lower_rot = 0.0f;
+float penguin_horizontal_trans = 0.0f;
+float penguin_vertical_trans = 0.0f;
 
 //////////////////////////////////////////////////////
 // TODO: Add additional joint parameters here
@@ -134,7 +139,7 @@ int main(int argc, char** argv)
     if(argc != 3) {
         printf("Usage: demo [width] [height]\n");
         printf("Using 300x200 window by default...\n");
-        Win[0] = 500;
+        Win[0] = 1000;
         Win[1] = 750;
     } else {
         Win[0] = atoi(argv[1]);
@@ -214,9 +219,8 @@ void initGlui()
         spinner->set_speed(0.1);\
         spinner->set_float_limits(min, max, GLUI_LIMIT_CLAMP);\
     }
-    const float MAX_BEAK_OPEN = 10;
     SPINNER(beak, beak_trans, 0, MAX_BEAK_OPEN)
-    SPINNER(head, head_rot, JOINT_MIN, JOINT_MAX);
+    SPINNER(head, head_rot, -HEAD_MAX_ROT, HEAD_MAX_ROT);
     SPINNER(fin, fin_rot, JOINT_MIN, JOINT_MAX);
     SPINNER(left_leg_lower, left_leg_lower_rot, JOINT_MIN, JOINT_MAX);
     SPINNER(left_leg_upp, left_leg_upper_rot, JOINT_MIN, JOINT_MAX);
@@ -259,6 +263,10 @@ void animate()
     // Update geometry
     const double joint_rot_speed = 0.1;
     double joint_rot_t = (sin(animation_frame*joint_rot_speed) + 1.0) / 2.0;
+    double cos_wave = (cos(animation_frame*joint_rot_speed) + 1.0) / 2.0;
+    double head_wave = (sin(animation_frame*joint_rot_speed/2) + 1.0) / 2.0;
+    double walk_wave = (cos(animation_frame*joint_rot_speed/4) + 1.0) / 2.0;
+
     joint_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
     
     ///////////////////////////////////////////////////////////
@@ -267,6 +275,14 @@ void animate()
     //   Note: Nothing should be drawn in this function!  OpenGL drawing
     //   should only happen in the display() callback.
     ///////////////////////////////////////////////////////////
+    beak_trans = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
+    head_rot = head_wave * -HEAD_MAX_ROT + (1 - head_wave) * HEAD_MAX_ROT;
+    fin_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
+    left_leg_upper_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
+    left_leg_lower_rot = joint_rot_t * 0 + (1 - joint_rot_t) * JOINT_MAX;
+    right_leg_upper_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
+    right_leg_lower_rot = joint_rot_t * 0 + (1 - joint_rot_t) * JOINT_MAX;
+    penguin_horizontal_trans = walk_wave * JOINT_MIN * 5 + (1 - walk_wave) * JOINT_MAX * 5;
 
     // Update user interface
     glui->sync_live();
@@ -343,6 +359,7 @@ void display(void)
     const float LOWER_LEG_THINKNESS = 30; 
 
     glPushMatrix();
+        glTranslatef(penguin_horizontal_trans, penguin_vertical_trans, 0);
         drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
         glPushMatrix();
             glPushMatrix();
