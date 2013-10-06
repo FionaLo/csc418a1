@@ -48,6 +48,13 @@ void usleep(unsigned int nanosec)
 }
 #endif
 
+// define some colors
+#define GREY 0.5, 0.5, 0.5
+#define ORANGE 1.0, 0.5, 0.0
+#define BLUE 0.0, 0.0, 1.0
+#define RED 1.0, 0.0, 0.0
+#define BLACK 0.0, 0.0, 0.0
+#define WHITE 1.0, 1.0, 1.0
 
 // *************** GLOBAL VARIABLES *************************
 
@@ -104,8 +111,10 @@ const float UPPER_LEG_HEIGHT = 140;
 const float UPPER_LEG_WIDTH = 50;
 const float LOWER_LEG_LENGTH = 160;
 const float LOWER_LEG_THINKNESS = 30; 
-
-
+// an estimate on the penguin height
+const float PENGUIN_HEIGHT = TORSO_HEIGHT + HEAD_HEIGHT + UPPER_LEG_HEIGHT + LOWER_LEG_LENGTH; 
+// an estimate on penguin width
+const float PENGUIN_WIDTH = TORSO_WIDTH + BEAK_WIDTH;
 
 // ***********  FUNCTION HEADER DECLARATIONS ****************
 
@@ -301,8 +310,8 @@ void animate()
     right_leg_upper_rot = sin_wave * -UPPER_LEG_MAX_ROT + (1 - sin_wave) * UPPER_LEG_MAX_ROT;
     right_leg_lower_rot = sin_wave * -LOWER_LEG_MAX_ROT + (1 - sin_wave) * LOWER_LEG_MAX_ROT;
     penguin_horizontal_trans -= 5;
-    if (penguin_horizontal_trans < -Win[0] / 2) { // offscreen
-        penguin_horizontal_trans = Win[0] / 2;
+    if (penguin_horizontal_trans + PENGUIN_WIDTH / 2< -Win[0] / 2) { // offscreen
+        penguin_horizontal_trans = Win[0] / 2 + PENGUIN_WIDTH / 2;
         jump = !jump;
         penguin_vertical_trans = 0;
     }
@@ -373,41 +382,42 @@ void display(void)
     //   render the individual body parts.
     ///////////////////////////////////////////////////////////
 
-
+    glScalef(0.5, 0.5, 1);
     glPushMatrix();
-        glTranslatef(penguin_horizontal_trans, penguin_vertical_trans, 0);
-        glColor3f(1.0, 1.0, 1.0);
+        // move the entire penguin up and down
+        glTranslatef(penguin_horizontal_trans, penguin_vertical_trans, 0); 
         drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
         glPushMatrix();
+            // draw the fin
             glPushMatrix();
-                glColor3f(0.5,  0.5, 0.5); // head is blue
+                // move fin to top right of torso
                 glTranslatef(TORSO_WIDTH * 0.05, TORSO_HEIGHT * 0.1, 0);
+                // create joint between torso and fin
                 jointAt(0, -FIN_HEIGHT * 0.4, fin_rot);
                 drawFin(FIN_HEIGHT, FIN_WIDTH);
             glPopMatrix();
+            // draw the left leg
             glPushMatrix();
                 glTranslatef(TORSO_WIDTH * 0.18, -TORSO_HEIGHT * 0.5, 0);
                 glRotatef(10, 0, 0, 1);
                 drawLeg(right_leg_upper_rot, right_leg_lower_rot);
             glPopMatrix();
+            // draw the right leg
             glPushMatrix();
                 glTranslatef(-TORSO_WIDTH * 0.25, -TORSO_HEIGHT * 0.45, 0);
                 glRotatef(-15, 0, 0, 1);
                 drawLeg(left_leg_upper_rot, left_leg_lower_rot);
             glPopMatrix();
+            // draw the head
             glPushMatrix();
-                glColor3f(0.0, 0.0, 1.0); // head is blue
-                glTranslatef(0, TORSO_HEIGHT * 0.57, 0); // move to top of torso
+                // move to top of torso
+                glTranslatef(0, TORSO_HEIGHT * 0.57, 0); 
+                // create joint between head and torso
                 jointAt(0, HEAD_HEIGHT * 0.4, head_rot);
                 drawHead(HEAD_HEIGHT, HEAD_WIDTH);
-                glTranslatef(- TORSO_WIDTH / 3, 0, 0);
-                glColor3f(1.0, 0.5, 0.0); // beak is orange
+                // move beak to proper place on head
+                glTranslatef(-TORSO_WIDTH / 3, 0, 0);
                 drawBeak(BEAK_HEIGHT, BEAK_WIDTH);
-                glPushMatrix();
-                    glTranslatef(0, -BEAK_HEIGHT * 0.6 - beak_trans, 0);
-                    glScalef(BEAK_WIDTH, 10, 1);
-                    drawSquare(1);
-                glPopMatrix();
             glPopMatrix();
         glPopMatrix();
     glPopMatrix();
@@ -446,9 +456,11 @@ void drawShape(float width, float height, float delta, float slant_percentage) {
 }
 
 void drawTorso(const float height, const float width) {
+    glColor3f(WHITE);
     glPushMatrix();
-        glTranslatef(((0.65 - 0.35) * width) / 2, -height / 2, 0); // translate the object's center to the origin
-         glBegin(GL_LINE_LOOP);
+        // translate the object's center to the origin
+        glTranslatef(((0.65 - 0.35) * width) / 2, -height / 2, 0);
+        glBegin(GL_LINE_LOOP);
             // draw the head, with the origin being placed at the lowest vertex, at the right leg
             glVertex2d(0, 0);
             glVertex2d(0.35 * width, 0.21 * height);
@@ -462,27 +474,38 @@ void drawTorso(const float height, const float width) {
 
 void drawHead(const float height, const float width) {
     glPushMatrix();
-        glTranslatef((-(0.63 - 0.37) / 2) * width, -height / 2, 0); // translate the object's center to the origin
+        // translate the object's center to the origin
+        glTranslatef((-(0.63 - 0.37) / 2) * width, -height / 2, 0); 
+        glColor3f(BLUE); 
         glBegin(GL_LINE_LOOP);
-            // draw the head, with the origin being placed at the head's bottom, right under its highest point
+            // draw the head, with the origin at the head's bottom, right under its highest point
             glVertex2d(0.63 * width, 0);
             glVertex2d(0.5 * width, 0.75 * height);
             glVertex2d(0, height);
             glVertex2d(-0.25 * width, 0.85 * height);
             glVertex2d(-0.37 * width, 0);
         glEnd();
-        glColor3f(1.0, 1.0, 1.0); // white outer eye
-        drawCircle(-width * 0.1, 0.8 * height, 10, 100, false); // outer eye
-        glColor3f(0, 0, 0); // black inner eye
-        drawCircle(-width * 0.11, 0.8 * height, 7, 100, true); // outer eye
+        // outer eye
+        glColor3f(WHITE); 
+        drawCircle(-width * 0.1, 0.8 * height, 10, 100, false); 
+         // inner eye
+        glColor3f(BLACK);
+        drawCircle(-width * 0.11, 0.8 * height, 7, 100, true);
     glPopMatrix();
 }
 
 void drawBeak(const float height, const float width) {
+    glColor3f(ORANGE); 
     drawShape(width, height, 2, 0.6);
+    glPushMatrix();
+        glTranslatef(0, -height * 0.6 - beak_trans, 0);
+        glScalef(width, 10, 1);
+        drawSquare(1);
+    glPopMatrix();
 }
 
 void drawFin(const float height, const float width) {
+    glColor3f(GREY); 
     glPushMatrix();
         glRotatef(90, 0, 0, 1);
         drawShape(height, width, 2, 0.6);
@@ -500,11 +523,10 @@ void shear(float shear_x, float shear_y) {
 
 void drawCircle(float cx, float cy, float r, int num_segments, bool filled) 
 { 
-    GLenum mode = filled ? GL_POLYGON : GL_LINE_LOOP;
+    const GLenum mode = filled ? GL_POLYGON : GL_LINE_LOOP;
     glBegin(mode); 
-    for(int i = 0; i < num_segments; i++) 
-    { 
-        float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);//get the current angle 
+    for(int i = 0; i < num_segments; i++) { 
+        float theta = 2.0f * PI * float(i) / float(num_segments);//get the current angle 
 
         float x = r * cosf(theta);//calculate the x component 
         float y = r * sinf(theta);//calculate the y component 
@@ -518,7 +540,7 @@ void drawCircle(float cx, float cy, float r, int num_segments, bool filled)
 void jointAt(const float x, const float y, const float &variable) {
     float currentColor[4];
     glGetFloatv(GL_CURRENT_COLOR,currentColor);
-    glColor3f(1.0, 0.0, 0.0);
+    glColor3f(RED);
     glTranslatef(-x, -y, 0); // move origin back 
     glRotatef(variable, 0, 0, 1); // rotate around joint
     drawCircle(0, 0, 5, 100, false); // draw joint
@@ -539,6 +561,7 @@ void drawTrapazoid(const float height, const float width, const float upper_widt
 }
 
 void drawLeg(const float &upper_rot_variable, const float &lower_rot_variable) {
+    glColor3f(GREY); 
     jointAt(0, - UPPER_LEG_HEIGHT * 0.4, upper_rot_variable);
     drawTrapazoid(UPPER_LEG_HEIGHT, UPPER_LEG_WIDTH, 0.8);
     glPushMatrix();
