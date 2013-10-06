@@ -104,7 +104,7 @@ void drawShape(float width, float height, float delta, float slant_percentage);
 void drawTorso(const float height, const float width);
 void drawHead(const float height, const float width);
 void shear(float shear_x, float shear_y);
-
+void drawCircle(float cx, float cy, float r, int num_segments);
 
 
 // Return the current system clock (in seconds)
@@ -338,7 +338,10 @@ void display(void)
             // glPopMatrix();
             glPushMatrix();
                 glTranslatef(0, TORSO_HEIGHT * 0.57, 0); // move to top of torso
+                glTranslatef(0, -HEAD_HEIGHT * 0.4, 0); // move to joint
                 glRotatef(head_rot, 0, 0, 1);
+                drawCircle(0, 0, 5, 100);
+                glTranslatef(0, HEAD_HEIGHT * 0.4, 0); // move to joint
                 drawHead(HEAD_HEIGHT, HEAD_WIDTH);
             glPopMatrix();
             // glPushMatrix();
@@ -463,4 +466,20 @@ void shear(float shear_x, float shear_y) {
         0, 0, 1, 0,
         0, 0, 0, 1 };
     glMultMatrixf(shear);
+}
+
+void drawCircle(float cx, float cy, float r, int num_segments) 
+{ 
+    glBegin(GL_LINE_LOOP); 
+    for(int i = 0; i < num_segments; i++) 
+    { 
+        float theta = 2.0f * 3.1415926f * float(i) / float(num_segments);//get the current angle 
+
+        float x = r * cosf(theta);//calculate the x component 
+        float y = r * sinf(theta);//calculate the y component 
+
+        glVertex2f(x + cx, y + cy);//output vertex 
+
+    } 
+    glEnd(); 
 }
