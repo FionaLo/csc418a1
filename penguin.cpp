@@ -58,7 +58,6 @@ void usleep(unsigned int nanosec)
 
 // *************** GLOBAL VARIABLES *************************
 
-
 const float PI = 3.14159;
 
 // --------------- USER INTERFACE VARIABLES -----------------
@@ -93,6 +92,8 @@ float right_leg_upper_rot = 0.0f;
 float right_leg_lower_rot = 0.0f;
 float penguin_horizontal_trans = 0.0f;
 float penguin_vertical_trans = 0.0f;
+
+float penguin_y_scale_factor = 1.0f;
 
 //////////////////////////////////////////////////////
 // TODO: Add additional joint parameters here
@@ -252,7 +253,7 @@ void initGlui()
     SPINNER(left_leg_upp, left_leg_upper_rot, JOINT_MIN, JOINT_MAX);
     SPINNER(right_leg_lower, right_leg_lower_rot, JOINT_MIN, JOINT_MAX);
     SPINNER(right_leg_upp, right_leg_upper_rot, JOINT_MIN, JOINT_MAX);
-
+    SPINNER(horiz, penguin_horizontal_trans, -1000, 1000);
 
     ///////////////////////////////////////////////////////////
     // TODO: 
@@ -290,7 +291,7 @@ void animate()
     const double joint_rot_speed = 0.1;
     double sin_wave = (sin(animation_frame*joint_rot_speed) + 1.0) / 2.0;
     double slow_sin_wave = (sin(animation_frame*joint_rot_speed/2) + 1.0) / 2.0;
-    double slowest_sin_wave = (sin(animation_frame*joint_rot_speed/4) + 1.0) / 2.0;
+    double slowest_sin_wave = (sin(animation_frame*joint_rot_speed/3) + 1.0) / 2.0;
     double cos_wave = (cos(animation_frame*joint_rot_speed) + 1.0) / 2.0;
     static bool jump = false;
 
@@ -309,11 +310,12 @@ void animate()
     left_leg_lower_rot = cos_wave * -LOWER_LEG_MAX_ROT + (1 - cos_wave) * LOWER_LEG_MAX_ROT;
     right_leg_upper_rot = sin_wave * -UPPER_LEG_MAX_ROT + (1 - sin_wave) * UPPER_LEG_MAX_ROT;
     right_leg_lower_rot = sin_wave * -LOWER_LEG_MAX_ROT + (1 - sin_wave) * LOWER_LEG_MAX_ROT;
-    penguin_horizontal_trans -= 5;
-    if (penguin_horizontal_trans + PENGUIN_WIDTH / 2< -Win[0] / 2) { // offscreen
-        penguin_horizontal_trans = Win[0] / 2 + PENGUIN_WIDTH / 2;
+    penguin_horizontal_trans += copysign(5, -penguin_y_scale_factor);
+    if (abs(penguin_horizontal_trans) - PENGUIN_WIDTH / 2 > Win[0] / 2) { // offscreen
+        // penguin_horizontal_trans = Win[0] / 2 + PENGUIN_WIDTH / 2;
         jump = !jump;
         penguin_vertical_trans = 0;
+        penguin_y_scale_factor = -penguin_y_scale_factor;
     }
     if (jump) {
         penguin_vertical_trans = (1 - cos_wave) * Win[1] / 8;
@@ -382,10 +384,12 @@ void display(void)
     //   render the individual body parts.
     ///////////////////////////////////////////////////////////
 
-    glScalef(0.5, 0.5, 1);
     glPushMatrix();
         // move the entire penguin up and down
         glTranslatef(penguin_horizontal_trans, penguin_vertical_trans, 0); 
+        glRotatef(penguin_rotate, 0, 0, 1);
+        // flip the penguin
+        glScalef(penguin_y_scale_factor, 1, 1);
         drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
         glPushMatrix();
             // draw the fin
