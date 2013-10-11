@@ -2,8 +2,8 @@
 Assignment 1 Checklist/Grading sheet
 -------------------------------------
 
-Name: 
-Student ID:
+Name: Neil Newman
+Student ID: 997382443
 
 -----------------------------------------------------------------------------------------
 A. PLEASE ANSWER THE FOLLOWING QUESTIONS (your assignment will not be graded otherwise!)
@@ -13,13 +13,13 @@ A. PLEASE ANSWER THE FOLLOWING QUESTIONS (your assignment will not be graded oth
    Student Academic Integrity policy stated at
    http://www.artsci.utoronto.ca/osai/students/academic-integrity-basics
 
-   ___Yes   ___No
+   __X_Yes   ___No
 
 
 ASSIGNMENT 1 IS TO BE COMPLETED INDIVIDUALLY.
 2. I collaborated on this assignment with another student 
 
-   ___Yes   ___No
+   ___Yes   __X_No
 
    If you checked yes, please supply the following
 

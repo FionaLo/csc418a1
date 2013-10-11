@@ -387,42 +387,39 @@ void display(void)
     glPushMatrix();
         // move the entire penguin up and down
         glTranslatef(penguin_horizontal_trans, penguin_vertical_trans, 0); 
-        glRotatef(penguin_rotate, 0, 0, 1);
         // flip the penguin
         glScalef(penguin_y_scale_factor, 1, 1);
         drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
+        // draw the fin
         glPushMatrix();
-            // draw the fin
-            glPushMatrix();
-                // move fin to top right of torso
-                glTranslatef(TORSO_WIDTH * 0.05, TORSO_HEIGHT * 0.1, 0);
-                // create joint between torso and fin
-                jointAt(0, -FIN_HEIGHT * 0.4, fin_rot);
-                drawFin(FIN_HEIGHT, FIN_WIDTH);
-            glPopMatrix();
-            // draw the left leg
-            glPushMatrix();
-                glTranslatef(TORSO_WIDTH * 0.18, -TORSO_HEIGHT * 0.5, 0);
-                glRotatef(10, 0, 0, 1);
-                drawLeg(right_leg_upper_rot, right_leg_lower_rot);
-            glPopMatrix();
-            // draw the right leg
-            glPushMatrix();
-                glTranslatef(-TORSO_WIDTH * 0.25, -TORSO_HEIGHT * 0.45, 0);
-                glRotatef(-15, 0, 0, 1);
-                drawLeg(left_leg_upper_rot, left_leg_lower_rot);
-            glPopMatrix();
-            // draw the head
-            glPushMatrix();
-                // move to top of torso
-                glTranslatef(0, TORSO_HEIGHT * 0.57, 0); 
-                // create joint between head and torso
-                jointAt(0, HEAD_HEIGHT * 0.4, head_rot);
-                drawHead(HEAD_HEIGHT, HEAD_WIDTH);
-                // move beak to proper place on head
-                glTranslatef(-TORSO_WIDTH / 3, 0, 0);
-                drawBeak(BEAK_HEIGHT, BEAK_WIDTH);
-            glPopMatrix();
+            // move fin to top right of torso
+            glTranslatef(TORSO_WIDTH * 0.05, TORSO_HEIGHT * 0.1, 0);
+            // create joint between torso and fin
+            jointAt(0, -FIN_HEIGHT * 0.4, fin_rot);
+            drawFin(FIN_HEIGHT, FIN_WIDTH);
+        glPopMatrix();
+        // draw the left leg
+        glPushMatrix();
+            glTranslatef(TORSO_WIDTH * 0.18, -TORSO_HEIGHT * 0.5, 0);
+            glRotatef(10, 0, 0, 1);
+            drawLeg(right_leg_upper_rot, right_leg_lower_rot);
+        glPopMatrix();
+        // draw the right leg
+        glPushMatrix();
+            glTranslatef(-TORSO_WIDTH * 0.25, -TORSO_HEIGHT * 0.45, 0);
+            glRotatef(-15, 0, 0, 1);
+            drawLeg(left_leg_upper_rot, left_leg_lower_rot);
+        glPopMatrix();
+        // draw the head
+        glPushMatrix();
+            // move to top of torso
+            glTranslatef(0, TORSO_HEIGHT * 0.57, 0); 
+            // create joint between head and torso
+            jointAt(0, HEAD_HEIGHT * 0.4, head_rot);
+            drawHead(HEAD_HEIGHT, HEAD_WIDTH);
+            // move beak to proper place on head
+            glTranslatef(-TORSO_WIDTH / 3, 0, 0);
+            drawBeak(BEAK_HEIGHT, BEAK_WIDTH);
         glPopMatrix();
     glPopMatrix();
 
