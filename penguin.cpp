@@ -74,30 +74,10 @@ int Win[2];                 // window (x,y) size
 int animate_mode = 0;       // 0 = no anim, 1 = animate
 int animation_frame = 0;      // Specify current frame of animation
 
-// Joint parameters
-const float JOINT_MIN = -45.0f;
-const float JOINT_MAX =  45.0f;
-const float MAX_BEAK_OPEN = 10;
-const float HEAD_MAX_ROT = 10;
-const float UPPER_LEG_MAX_ROT = 30;
-const float LOWER_LEG_MAX_ROT = 20;
-
-float joint_rot = 0.0f;
-float beak_trans = 0.0f;
-float head_rot = 0.0f;
-float fin_rot = 0.0f;
-float left_leg_upper_rot = 0.0f;
-float left_leg_lower_rot = 0.0f;
-float right_leg_upper_rot = 0.0f;
-float right_leg_lower_rot = 0.0f;
-float penguin_horizontal_trans = 0.0f;
-float penguin_vertical_trans = 0.0f;
-
-float penguin_y_scale_factor = 1.0f;
-
-//////////////////////////////////////////////////////
-// TODO: Add additional joint parameters here
-//////////////////////////////////////////////////////
+// scale the penguin
+// change these if you increase the window size from the default for a larger penguin
+float penguin_y_scale_factor = 0.2f;
+float penguin_x_scale_factor = 0.2f;
 
 // Sizing variables
 const float TORSO_HEIGHT = 520;
@@ -113,9 +93,33 @@ const float UPPER_LEG_WIDTH = 50;
 const float LOWER_LEG_LENGTH = 160;
 const float LOWER_LEG_THINKNESS = 30; 
 // an estimate on the penguin height
-const float PENGUIN_HEIGHT = TORSO_HEIGHT + HEAD_HEIGHT + UPPER_LEG_HEIGHT + LOWER_LEG_LENGTH; 
+const float PENGUIN_HEIGHT = (TORSO_HEIGHT + HEAD_HEIGHT + UPPER_LEG_HEIGHT + LOWER_LEG_LENGTH) * penguin_y_scale_factor; 
 // an estimate on penguin width
-const float PENGUIN_WIDTH = TORSO_WIDTH + BEAK_WIDTH;
+const float PENGUIN_WIDTH = (TORSO_WIDTH + BEAK_WIDTH) * penguin_x_scale_factor;
+
+// Joint parameters
+const float HEAD_MAX_ROT = 10;
+const float UPPER_LEG_MAX_ROT = 30;
+const float LOWER_LEG_MAX_ROT = 20;
+const float FIN_MIN_ROT = -45;
+const float FIN_MAX_ROT = 45;
+
+float head_rot = 0.0f;
+float fin_rot = 0.0f;
+float left_leg_upper_rot = 0.0f;
+float left_leg_lower_rot = 0.0f;
+float right_leg_upper_rot = 0.0f;
+float right_leg_lower_rot = 0.0f;
+
+// Translation parameters
+float penguin_horizontal_trans = 0.0f;
+float penguin_vertical_trans = 0.0f;
+float beak_trans = 0.0f;
+
+const float MAX_BEAK_OPEN = 10;
+// can't set till main when you know the window size
+float PENGUIN_MAX_TRANS;
+
 
 // ***********  FUNCTION HEADER DECLARATIONS ****************
 
@@ -137,10 +141,9 @@ void GLUI_Control(int id);
 
 // Functions to help draw the object
 void drawSquare(float size);
-void drawShape(float width, float height, float delta, float slant_percentage);
+void drawBeakFinShape(float width, float height, float slant_percentage);
 void drawTorso(const float height, const float width);
 void drawHead(const float height, const float width);
-void shear(float shear_x, float shear_y);
 void drawCircle(float cx, float cy, float r, int num_segments, bool filled);
 void drawBeak(const float height, const float width);
 void drawFin(const float height, const float width);
@@ -166,13 +169,16 @@ int main(int argc, char** argv)
     if(argc != 3) {
         printf("Usage: demo [width] [height]\n");
         printf("Using 300x200 window by default...\n");
-        Win[0] = 1200;
-        Win[1] = 1200;
+        Win[0] = 300;
+        Win[1] = 200;
     } else {
         Win[0] = atoi(argv[1]);
         Win[1] = atoi(argv[2]);
     }
 
+    // set this here, becasue it requires knowing the window size. 
+    // unfortunately can't resize later because of spinner
+    PENGUIN_MAX_TRANS = Win[0] / 2 + PENGUIN_WIDTH;
 
     // Initialize glut, glui, and opengl
     glutInit(&argc, argv);
@@ -234,13 +240,7 @@ void initGlui()
     // Create GLUI window
     glui = GLUI_Master.create_glui("Glui Window", 0, Win[0]+10, 0);
 
-    // Create a control to specify the rotation of the joint
-    GLUI_Spinner *joint_spinner
-        = glui->add_spinner("Joint", GLUI_SPINNER_FLOAT, &joint_rot);
-    joint_spinner->set_speed(0.1);
-    joint_spinner->set_float_limits(JOINT_MIN, JOINT_MAX, GLUI_LIMIT_CLAMP);
-
-
+    // define a macro for easily creating spinners
     #define SPINNER(name, variable, min, max) { \
         GLUI_Spinner *spinner = glui->add_spinner(#name, GLUI_SPINNER_FLOAT, &variable);\
         spinner->set_speed(0.1);\
@@ -248,17 +248,13 @@ void initGlui()
     }
     SPINNER(beak, beak_trans, 0, MAX_BEAK_OPEN)
     SPINNER(head, head_rot, -HEAD_MAX_ROT, HEAD_MAX_ROT);
-    SPINNER(fin, fin_rot, JOINT_MIN, JOINT_MAX);
-    SPINNER(left_leg_lower, left_leg_lower_rot, JOINT_MIN, JOINT_MAX);
-    SPINNER(left_leg_upp, left_leg_upper_rot, JOINT_MIN, JOINT_MAX);
-    SPINNER(right_leg_lower, right_leg_lower_rot, JOINT_MIN, JOINT_MAX);
-    SPINNER(right_leg_upp, right_leg_upper_rot, JOINT_MIN, JOINT_MAX);
-    SPINNER(horiz, penguin_horizontal_trans, -1000, 1000);
-
-    ///////////////////////////////////////////////////////////
-    // TODO: 
-    //   Add controls for additional joints here
-    ///////////////////////////////////////////////////////////
+    SPINNER(fin, fin_rot, FIN_MIN_ROT, FIN_MAX_ROT);
+    SPINNER(left_leg_lower, left_leg_lower_rot, -LOWER_LEG_MAX_ROT, LOWER_LEG_MAX_ROT);
+    SPINNER(left_leg_upp, left_leg_upper_rot, -UPPER_LEG_MAX_ROT, UPPER_LEG_MAX_ROT);
+    SPINNER(right_leg_lower, right_leg_lower_rot, -LOWER_LEG_MAX_ROT, LOWER_LEG_MAX_ROT);
+    SPINNER(right_leg_upp, right_leg_upper_rot, -UPPER_LEG_MAX_ROT, UPPER_LEG_MAX_ROT);
+    SPINNER(horiz, penguin_horizontal_trans, -PENGUIN_MAX_TRANS, PENGUIN_MAX_TRANS);
+    #undef SPINNER
 
     // Add button to specify animation mode 
     glui->add_separator();
@@ -287,40 +283,40 @@ void initGl(void)
 // Callback idle function for animating the scene
 void animate()
 {
-    // Update geometry
+    // get some sin and cos waves to use of varying speeds
     const double joint_rot_speed = 0.1;
-    double sin_wave = (sin(animation_frame*joint_rot_speed) + 1.0) / 2.0;
-    double slow_sin_wave = (sin(animation_frame*joint_rot_speed/2) + 1.0) / 2.0;
-    double slowest_sin_wave = (sin(animation_frame*joint_rot_speed/3) + 1.0) / 2.0;
-    double cos_wave = (cos(animation_frame*joint_rot_speed) + 1.0) / 2.0;
-    static bool jump = false;
-
-    // joint_rot = joint_rot_t * JOINT_MIN + (1 - joint_rot_t) * JOINT_MAX;
+    const double sin_wave = (sin(animation_frame*joint_rot_speed) + 1.0) / 2.0;
+    const double slow_sin_wave = (sin(animation_frame*joint_rot_speed/2) + 1.0) / 2.0;
+    const double cos_wave = (cos(animation_frame*joint_rot_speed) + 1.0) / 2.0;
     
-    ///////////////////////////////////////////////////////////
-    // TODO:
-    //   Modify this function animate the character's joints
-    //   Note: Nothing should be drawn in this function!  OpenGL drawing
-    //   should only happen in the display() callback.
-    ///////////////////////////////////////////////////////////
-    beak_trans = (1 - slowest_sin_wave) * MAX_BEAK_OPEN;
+    // a static boolean to remember if the penguin is jumping between invocations of the function
+    static bool jumping = false;
+
+    // using the above waves, compute some joint rotations
     head_rot = slow_sin_wave * -HEAD_MAX_ROT + (1 - slow_sin_wave) * HEAD_MAX_ROT;
-    fin_rot = sin_wave * JOINT_MIN + (1 - sin_wave) * JOINT_MAX;
+    fin_rot = sin_wave * FIN_MIN_ROT + (1 - sin_wave) * FIN_MAX_ROT;
     left_leg_upper_rot = cos_wave * -UPPER_LEG_MAX_ROT + (1 - cos_wave) * UPPER_LEG_MAX_ROT;
     left_leg_lower_rot = cos_wave * -LOWER_LEG_MAX_ROT + (1 - cos_wave) * LOWER_LEG_MAX_ROT;
     right_leg_upper_rot = sin_wave * -UPPER_LEG_MAX_ROT + (1 - sin_wave) * UPPER_LEG_MAX_ROT;
     right_leg_lower_rot = sin_wave * -LOWER_LEG_MAX_ROT + (1 - sin_wave) * LOWER_LEG_MAX_ROT;
-    penguin_horizontal_trans += copysign(5, -penguin_y_scale_factor);
-    if (abs(penguin_horizontal_trans) - PENGUIN_WIDTH / 2 > Win[0] / 2) { // offscreen
-        // penguin_horizontal_trans = Win[0] / 2 + PENGUIN_WIDTH / 2;
-        jump = !jump;
+
+    // compute how much to open the beak
+    beak_trans = (1 - slow_sin_wave) * MAX_BEAK_OPEN;
+
+    // compute how much to walk, and remember to walk in the direction we are facing
+    penguin_horizontal_trans += copysign(5, -penguin_x_scale_factor);
+
+    // check for offscreen
+    if (abs(penguin_horizontal_trans) - PENGUIN_WIDTH / 2 > Win[0] / 2) { 
+        // if we weren't jumping, start jumping. If we were, stop
+        jumping = !jumping;
         penguin_vertical_trans = 0;
-        penguin_y_scale_factor = -penguin_y_scale_factor;
+        // turn around
+        penguin_x_scale_factor = -penguin_x_scale_factor;
     }
-    if (jump) {
+    if (jumping) {
         penguin_vertical_trans = (1 - cos_wave) * Win[1] / 8;
     }
-    // penguin_vertical_trans = jump_wave * JOINT_MIN * 5 + (1 - jump_wave) * JOINT_MAX * 5;
 
     // Update user interface
     glui->sync_live();
@@ -376,19 +372,11 @@ void display(void)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    ///////////////////////////////////////////////////////////
-    // TODO:
-    //   Modify this function draw the scene
-    //   This should include function calls to pieces that
-    //   apply the appropriate transformation matrice and
-    //   render the individual body parts.
-    ///////////////////////////////////////////////////////////
-
     glPushMatrix();
-        // move the entire penguin up and down
+        // translate the entire penguin
         glTranslatef(penguin_horizontal_trans, penguin_vertical_trans, 0); 
-        // flip the penguin
-        glScalef(penguin_y_scale_factor, 1, 1);
+        // scale the penguin
+        glScalef(penguin_x_scale_factor, penguin_y_scale_factor, 1);
         drawTorso(TORSO_HEIGHT, TORSO_WIDTH);
         // draw the fin
         glPushMatrix();
@@ -400,26 +388,32 @@ void display(void)
         glPopMatrix();
         // draw the left leg
         glPushMatrix();
+            // move the leg to the bottom left of the torso
             glTranslatef(TORSO_WIDTH * 0.18, -TORSO_HEIGHT * 0.5, 0);
+            // set some constant rotation offset
             glRotatef(10, 0, 0, 1);
             drawLeg(right_leg_upper_rot, right_leg_lower_rot);
         glPopMatrix();
         // draw the right leg
         glPushMatrix();
+            // move the leg to the bottom right of the torso
             glTranslatef(-TORSO_WIDTH * 0.25, -TORSO_HEIGHT * 0.45, 0);
+            // set some constant rotation offset
             glRotatef(-15, 0, 0, 1);
             drawLeg(left_leg_upper_rot, left_leg_lower_rot);
         glPopMatrix();
         // draw the head
         glPushMatrix();
-            // move to top of torso
+            // move head to top of torso
             glTranslatef(0, TORSO_HEIGHT * 0.57, 0); 
             // create joint between head and torso
             jointAt(0, HEAD_HEIGHT * 0.4, head_rot);
             drawHead(HEAD_HEIGHT, HEAD_WIDTH);
-            // move beak to proper place on head
-            glTranslatef(-TORSO_WIDTH / 3, 0, 0);
-            drawBeak(BEAK_HEIGHT, BEAK_WIDTH);
+            glPushMatrix();
+                // move beak to proper place on head
+                glTranslatef(-TORSO_WIDTH / 3, 0, 0);
+                drawBeak(BEAK_HEIGHT, BEAK_WIDTH);
+            glPopMatrix();
         glPopMatrix();
     glPopMatrix();
 
@@ -444,25 +438,29 @@ void drawSquare(float width)
     glEnd();
 }
 
-void drawShape(float width, float height, float delta, float slant_percentage) {
+// draw the shape used for both the beak and fin, centered at the current location. 
+// it is drawn in the orientation used for the beak
+// slant percentange controls the slope of the top of the beak / side of fin
+void drawBeakFinShape(float width, float height, float slant_percentage) {
     const float h_width = width / 2;
     const float h_height = height / 2;
-    // Draw the square
     glBegin(GL_LINE_LOOP);
         glVertex2d(h_width, -h_height);
-        glVertex2d(h_width - delta, h_height);
+        glVertex2d(h_width, h_height);
         glVertex2d(-h_width, h_height - slant_percentage * height);
-        glVertex2d(-h_width + delta, -h_height);
+        glVertex2d(-h_width, -h_height);
     glEnd();   
 }
 
+// draw the penguin's torso, centered at the current location
 void drawTorso(const float height, const float width) {
     glColor3f(WHITE);
     glPushMatrix();
-        // translate the object's center to the origin
+        // translate the object's center to the origin so that other functions are easier to reason about
         glTranslatef(((0.65 - 0.35) * width) / 2, -height / 2, 0);
         glBegin(GL_LINE_LOOP);
-            // draw the head, with the origin being placed at the lowest vertex, at the right leg
+            // draw the torso, with the origin being placed at the lowest vertex, the one near the right leg
+            // the percentages are based on rough measurements of the assignment image
             glVertex2d(0, 0);
             glVertex2d(0.35 * width, 0.21 * height);
             glVertex2d(0.05 * width, height);
@@ -473,13 +471,15 @@ void drawTorso(const float height, const float width) {
     glPopMatrix();
 }
 
+// draw the penguin's head, centered at the current location
 void drawHead(const float height, const float width) {
     glPushMatrix();
-        // translate the object's center to the origin
+        // translate the object's center to the origin so that other functions are easier to reason about
         glTranslatef((-(0.63 - 0.37) / 2) * width, -height / 2, 0); 
         glColor3f(BLUE); 
         glBegin(GL_LINE_LOOP);
             // draw the head, with the origin at the head's bottom, right under its highest point
+            // the percentages are based on rough measurements of the assignment image
             glVertex2d(0.63 * width, 0);
             glVertex2d(0.5 * width, 0.75 * height);
             glVertex2d(0, height);
@@ -495,9 +495,10 @@ void drawHead(const float height, const float width) {
     glPopMatrix();
 }
 
+// draw the beak, centered at the current location
 void drawBeak(const float height, const float width) {
     glColor3f(ORANGE); 
-    drawShape(width, height, 2, 0.6);
+    drawBeakFinShape(width, height, 0.6);
     glPushMatrix();
         glTranslatef(0, -height * 0.6 - beak_trans, 0);
         glScalef(width, 10, 1);
@@ -505,50 +506,48 @@ void drawBeak(const float height, const float width) {
     glPopMatrix();
 }
 
+// draw the fin, centered at the current location
 void drawFin(const float height, const float width) {
     glColor3f(GREY); 
     glPushMatrix();
         glRotatef(90, 0, 0, 1);
-        drawShape(height, width, 2, 0.6);
+        drawBeakFinShape(height, width, 0.6);
     glPopMatrix();
 }
 
-void shear(float shear_x, float shear_y) {
-    float shear[] = { 
-       1, shear_y, 0, 0, 
-       shear_x, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1 };
-    glMultMatrixf(shear);
-}
-
+// draw a circle of radius r, centered at offset cx, cy from the current location
+// a circle may be filled or unfilled
+// a circle is composed of num_segments line segments
 void drawCircle(float cx, float cy, float r, int num_segments, bool filled) 
 { 
     const GLenum mode = filled ? GL_POLYGON : GL_LINE_LOOP;
     glBegin(mode); 
     for(int i = 0; i < num_segments; i++) { 
-        float theta = 2.0f * PI * float(i) / float(num_segments);//get the current angle 
-
-        float x = r * cosf(theta);//calculate the x component 
-        float y = r * sinf(theta);//calculate the y component 
-
-        glVertex2f(x + cx, y + cy);//output vertex 
-
+        float theta = 2.0f * PI * float(i) / float(num_segments);
+        float x = r * cosf(theta);
+        float y = r * sinf(theta);
+        glVertex2f(x + cx, y + cy);
     } 
     glEnd(); 
 }
 
+// create a joint at x, y offset from the current location. 
+// the joint's rotation will be controlled by the variable argument
 void jointAt(const float x, const float y, const float &variable) {
+    // keep the current color so we can swap it back later
     float currentColor[4];
-    glGetFloatv(GL_CURRENT_COLOR,currentColor);
+    glGetFloatv(GL_CURRENT_COLOR, currentColor);
     glColor3f(RED);
     glTranslatef(-x, -y, 0); // move origin back 
     glRotatef(variable, 0, 0, 1); // rotate around joint
     drawCircle(0, 0, 5, 100, false); // draw joint
     glTranslatef(x, y, 0); // move origin to joint
+    // restore current color
     glColor3f(currentColor[0], currentColor[1], currentColor[2]);
 }
 
+// draw a trapazoid, centered at the current location. 
+// upper_width_percentange controls the relative width of the upper to lower line
 void drawTrapazoid(const float height, const float width, const float upper_width_percentage) {
     const float h_width = width / 2;
     const float upper_h_width = (width * upper_width_percentage) / 2;
@@ -561,10 +560,15 @@ void drawTrapazoid(const float height, const float width, const float upper_widt
     glEnd();
 }
 
+// draw a leg, centered the current location
+// takes in both the upper and lower rotation variables
 void drawLeg(const float &upper_rot_variable, const float &lower_rot_variable) {
     glColor3f(GREY); 
+    // create the upper leg's joint
     jointAt(0, - UPPER_LEG_HEIGHT * 0.4, upper_rot_variable);
+    // draw the upper leg
     drawTrapazoid(UPPER_LEG_HEIGHT, UPPER_LEG_WIDTH, 0.8);
+    // draw the lower leg
     glPushMatrix();
         glTranslatef(-(LOWER_LEG_LENGTH - UPPER_LEG_WIDTH) / 2, -(UPPER_LEG_HEIGHT - LOWER_LEG_THINKNESS) / 2 + 5, 0);
         jointAt(-LOWER_LEG_LENGTH * 0.4, 0, lower_rot_variable);

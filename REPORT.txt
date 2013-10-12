@@ -1,0 +1,26 @@
+Neil Newman
+997382443
+CSC418 A1 Report
+Fri Oct. 11, 2013
+
+Design:
+The penguin is composed of a torso, a head, a beak, a fin, and two legs. The beak is composed of an upper and lower segment, and the legs are divided into upper and lower segments. The objects are drawn in a kinematic tree, where an object inherits transformations applied to its parent nodes. The torso is at the root of this tree, and so transformations applied to the torso apply to the entire penguin.The torso is scaled and translated, to size and move the entire penguin. Its children are as follows:
+
+Fin: The fin shares the same shape as the beak, rotated by 90. It is connected to the torso via a joint and rotates. 
+
+Legs: There are right and left legs, consisting of two segments each: an upper and lower part, with the lower part being a child node of the upper part. The lower part of the legs is a square scaled into a rectangle. The upper part is a trapazoid. There is a joint between the upper and lower leg, and between the upper leg and the torso.
+
+Upper Beak: The beak is a child node of the head. The upper beak is stationary. It is a four sided sloping shape, like a cut off triangle.
+Beak Bottom: The beaks' bottom is a simple rectangle, made from scaling a square. It moves up and down in the frame of reference of the upper beak. 
+
+Head: The head is a five sided figure. The relative sizes of the of the line segments were guessed at by measuring the image in the assignment. An eye is made from two circles and placed on the head. There is a joint between it and torso. 
+
+Circle: A circle is drawn by combining various line segments to give the illusion of roundness. Used to mark joints and for the eye.
+
+Torso: The penguin's torso is a 6 sided shape. The relative sizes of the of the line segments were guessed at by measuring the image in the assignment. 
+
+The tree is layed out entirely in code. The display function operates as follows:
+First apply translation and scaling matrices that will apply to the entire penguin. Then, for each child node, apply a translation matrix to move the node to the right position relative to the parent node. Joints are created using a "jointAt" function: this function does a translation to move the shape that is to be rotated so that its point of rotation is at the origin, then draws a circle to mark the location, rotates the object, translate the object so that it's center is once again at the origin.
+
+Animation:
+Animation is performed by using sine waves to rotate the joints. The penguin is  translated each frame, and when the penguin crosses the screen boundary he turns around and hops in the other direction, then resumes walking. All of these motions (except for vertical translation) can be controlled via the spinners. 
