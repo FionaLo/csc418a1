@@ -204,8 +204,6 @@ Vector getInterpolatedJointDOFS(float time);
 void drawCube();
 void drawTorso(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth);
 
-
-
 // Image functions
 void writeFrame(char* filename, bool pgm, bool frontBuffer);
 
@@ -872,9 +870,19 @@ void display(void)
     const float HEAD_LOWER_DEPTH = 1.2 * TORSO_UPPER_DEPTH;
     const float HEAD_UPPER_DEPTH = 0.8 * HEAD_LOWER_DEPTH;
 
+    const float BEAK_HEIGHT = 0.2 * HEAD_HEIGHT;
+    const float BEAK_LOWER_WIDTH = 0.5 * HEAD_LOWER_WIDTH;
+    const float BEAK_UPPER_WIDTH = 0.8 * BEAK_LOWER_WIDTH;
+    const float BEAK_LOWER_DEPTH = 0.3 * HEAD_LOWER_DEPTH;
+    const float BEAK_UPPER_DEPTH = 0.8 * BEAK_LOWER_DEPTH;
+
 	// SAMPLE CODE **********
 	//
 	glPushMatrix();
+
+ 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_RESCALE_NORMAL);
+		glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 
 		// determine render style and set glPolygonMode appropriately
 
@@ -893,6 +901,13 @@ void display(void)
 		glPushMatrix();
 			glTranslatef(0, TORSO_HEIGHT / 2 + HEAD_HEIGHT / 2, 0); // move head up
 			drawTorso(HEAD_HEIGHT, HEAD_UPPER_WIDTH, HEAD_LOWER_WIDTH, HEAD_UPPER_DEPTH, HEAD_LOWER_DEPTH);
+			glPushMatrix();
+				glTranslatef(- HEAD_LOWER_WIDTH / 2, BEAK_HEIGHT / 2, 0); // move beak up to head
+				drawTorso(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
+				glTranslatef(0, - BEAK_HEIGHT / 2, 0); // move beak up to head
+				glScalef(1.0, -1.0, 1.0);
+				drawTorso(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
+			glPopMatrix();
 		glPopMatrix();
 
 	glPopMatrix();
@@ -1007,13 +1022,15 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 	const float h_height = height / 2;
 	glBegin(GL_QUADS);
 
-		glColor3f(RED);
+		glColor3f(GREY);
 
 		// draw top
 		glVertex3f(h_upper_width, h_height, h_upper_depth);
 		glVertex3f(h_upper_width, h_height, -h_upper_depth);
 		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
 		glVertex3f(-h_upper_width,  h_height, h_upper_depth);
+
+		glColor3f(ORANGE);
 
 		// draw bottom
 		glVertex3f(h_lower_width, -h_height, h_lower_depth);
@@ -1024,30 +1041,34 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 		glColor3f(BLUE);
 
 		// draw left side
-		glVertex3f(-h_lower_width, -h_height,  -h_lower_depth);
 		glVertex3f(-h_lower_width, -h_height,  h_lower_depth);
-		glVertex3f(-h_upper_width,  h_height, h_lower_depth);
-		glVertex3f(-h_upper_width,  h_height,  -h_lower_depth);
+		glVertex3f(-h_lower_width, -h_height,  -h_lower_depth);
+		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
+		glVertex3f(-h_upper_width,  h_height,  h_upper_depth);
+
+		glColor3f(RED);
 
 		// draw right side
-		glVertex3f(h_lower_width, -h_height,  -h_lower_depth);
 		glVertex3f(h_lower_width, -h_height,  h_lower_depth);
-		glVertex3f(h_upper_width,  h_height, h_lower_depth);
-		glVertex3f(h_upper_width,  h_height,  -h_lower_depth);
+		glVertex3f(h_lower_width, -h_height,  -h_lower_depth);
+		glVertex3f(h_upper_width,  h_height, -h_upper_depth);
+		glVertex3f(h_upper_width,  h_height,  h_upper_depth);
 
-		glColor3f(GREY);
+		glColor3f(BLACK);
 
 		// draw front
-		glVertex3f(h_lower_width,  -h_height,  -h_lower_depth);
-		glVertex3f(h_upper_width,  h_height,  -h_lower_depth);
-		glVertex3f(-h_upper_width,  h_height, -h_lower_depth);
-		glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
+		glVertex3f(h_lower_width,  -h_height,  h_lower_depth);
+		glVertex3f(h_upper_width,  h_height,  h_upper_depth);
+		glVertex3f(-h_upper_width,  h_height, h_upper_depth);
+		glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
+
+		glColor3f(WHITE);
 
 		// draw back
-		glVertex3f(h_lower_width,  -h_height,  h_lower_depth);
-		glVertex3f(h_upper_width,  h_height,  h_lower_depth);
-		glVertex3f(-h_upper_width,  h_height, h_lower_depth);
-		glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
+		glVertex3f(h_lower_width,  -h_height,  -h_lower_depth);
+		glVertex3f(h_upper_width,  h_height,  -h_upper_depth);
+		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
+		glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
 
 	glEnd();
 }
