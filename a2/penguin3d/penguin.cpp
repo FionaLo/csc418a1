@@ -50,6 +50,13 @@
 #include "vector.h"
 
 
+#define GREY 0.5, 0.5, 0.5
+#define ORANGE 1.0, 0.5, 0.0
+#define BLUE 0.0, 0.0, 1.0
+#define RED 1.0, 0.0, 0.0
+#define BLACK 0.0, 0.0, 0.0
+#define WHITE 1.0, 1.0, 1.0
+
 // *************** GLOBAL VARIABLES *************************
 
 
@@ -81,7 +88,7 @@ const float ZOOM_SCALE = 0.01;
 
 GLdouble camXPos =  0.0;
 GLdouble camYPos =  0.0;
-GLdouble camZPos = -7.5;
+GLdouble camZPos = -400;
 
 const GLdouble CAMERA_FOVY = 60.0;
 const GLdouble NEAR_CLIP   = 0.1;
@@ -144,7 +151,7 @@ const float ROOT_TRANSLATE_X_MIN = -5.0;
 const float ROOT_TRANSLATE_X_MAX =  5.0;
 const float ROOT_TRANSLATE_Y_MIN = -5.0;
 const float ROOT_TRANSLATE_Y_MAX =  5.0;
-const float ROOT_TRANSLATE_Z_MIN = -5.0;
+const float ROOT_TRANSLATE_Z_MIN = -100;
 const float ROOT_TRANSLATE_Z_MAX =  5.0;
 const float ROOT_ROTATE_X_MIN    = -180.0;
 const float ROOT_ROTATE_X_MAX    =  180.0;
@@ -195,6 +202,8 @@ void motion(int x, int y);
 // Functions to help draw the object
 Vector getInterpolatedJointDOFS(float time);
 void drawCube();
+void drawTorso(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth);
+
 
 
 // Image functions
@@ -216,8 +225,8 @@ int main(int argc, char** argv)
     if(argc != 3) {
         printf("Usage: demo [width] [height]\n");
         printf("Using 640x480 window by default...\n");
-        Win[0] = 640;
-        Win[1] = 480;
+        Win[0] = 1200;
+        Win[1] = 800;
     } else {
         Win[0] = atoi(argv[1]);
         Win[1] = atoi(argv[2]);
@@ -851,22 +860,40 @@ void display(void)
 	//   rendered.
     ///////////////////////////////////////////////////////////
 
+    const float TORSO_HEIGHT = 100;
+    const float TORSO_UPPER_DEPTH = 0.3 * TORSO_HEIGHT;
+    const float TORSO_LOWER_DEPTH = 1.5 * TORSO_UPPER_DEPTH;
+    const float TORSO_UPPER_WIDTH = 0.4 * TORSO_HEIGHT;
+    const float TORSO_LOWER_WIDTH = 1.5 * TORSO_UPPER_WIDTH;
+
+    const float HEAD_HEIGHT = 0.5 * TORSO_HEIGHT;
+    const float HEAD_LOWER_WIDTH = 1.3 * TORSO_UPPER_WIDTH;
+    const float HEAD_UPPER_WIDTH = 0.8 * HEAD_LOWER_WIDTH;
+    const float HEAD_LOWER_DEPTH = 1.2 * TORSO_UPPER_DEPTH;
+    const float HEAD_UPPER_DEPTH = 0.8 * HEAD_LOWER_DEPTH;
+
 	// SAMPLE CODE **********
 	//
 	glPushMatrix();
 
-		// setup transformation for body part
+		// determine render style and set glPolygonMode appropriately
+
 		glTranslatef(joint_ui_data->getDOF(Keyframe::ROOT_TRANSLATE_X),
 					 joint_ui_data->getDOF(Keyframe::ROOT_TRANSLATE_Y),
 					 joint_ui_data->getDOF(Keyframe::ROOT_TRANSLATE_Z));
-		glRotatef(30.0, 0.0, 1.0, 0.0);
-		glRotatef(30.0, 1.0, 0.0, 0.0);
 
-		// determine render style and set glPolygonMode appropriately
+		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_X),
+					 1, 0, 0);
+		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Y),
+			 0, 1, 0);
+		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z),
+			 0, 0, 1);
 
-		// draw body part
-		glColor3f(1.0, 1.0, 1.0);
-		drawCube();
+		drawTorso(TORSO_HEIGHT, TORSO_UPPER_WIDTH, TORSO_LOWER_WIDTH, TORSO_UPPER_DEPTH, TORSO_LOWER_DEPTH);
+		glPushMatrix();
+			glTranslatef(0, TORSO_HEIGHT / 2 + HEAD_HEIGHT / 2, 0); // move head up
+			drawTorso(HEAD_HEIGHT, HEAD_UPPER_WIDTH, HEAD_LOWER_WIDTH, HEAD_UPPER_DEPTH, HEAD_LOWER_DEPTH);
+		glPopMatrix();
 
 	glPopMatrix();
 	//
@@ -931,6 +958,7 @@ void drawCube()
 {
 	glBegin(GL_QUADS);
 		// draw front face
+		glColor3f(BLUE);
 		glVertex3f(-1.0, -1.0, 1.0);
 		glVertex3f( 1.0, -1.0, 1.0);
 		glVertex3f( 1.0,  1.0, 1.0);
@@ -943,6 +971,7 @@ void drawCube()
 		glVertex3f( 1.0,  1.0, -1.0);
 
 		// draw left face
+		glColor3f(GREY);
 		glVertex3f(-1.0, -1.0, -1.0);
 		glVertex3f(-1.0, -1.0,  1.0);
 		glVertex3f(-1.0,  1.0,  1.0);
@@ -965,6 +994,61 @@ void drawCube()
 		glVertex3f( 1.0, -1.0, -1.0);
 		glVertex3f( 1.0, -1.0,  1.0);
 		glVertex3f(-1.0, -1.0,  1.0);
+	glEnd();
+}
+
+// depth and width are as pictured in orientation on a2 handout
+void drawTorso(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth)
+{
+	const float h_upper_width = upper_width / 2;
+	const float h_upper_depth = upper_depth / 2;
+	const float h_lower_width = lower_width / 2;
+	const float h_lower_depth = lower_depth / 2;	
+	const float h_height = height / 2;
+	glBegin(GL_QUADS);
+
+		glColor3f(RED);
+
+		// draw top
+		glVertex3f(h_upper_width, h_height, h_upper_depth);
+		glVertex3f(h_upper_width, h_height, -h_upper_depth);
+		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
+		glVertex3f(-h_upper_width,  h_height, h_upper_depth);
+
+		// draw bottom
+		glVertex3f(h_lower_width, -h_height, h_lower_depth);
+		glVertex3f(h_lower_width, -h_height, -h_lower_depth);
+		glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
+		glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
+
+		glColor3f(BLUE);
+
+		// draw left side
+		glVertex3f(-h_lower_width, -h_height,  -h_lower_depth);
+		glVertex3f(-h_lower_width, -h_height,  h_lower_depth);
+		glVertex3f(-h_upper_width,  h_height, h_lower_depth);
+		glVertex3f(-h_upper_width,  h_height,  -h_lower_depth);
+
+		// draw right side
+		glVertex3f(h_lower_width, -h_height,  -h_lower_depth);
+		glVertex3f(h_lower_width, -h_height,  h_lower_depth);
+		glVertex3f(h_upper_width,  h_height, h_lower_depth);
+		glVertex3f(h_upper_width,  h_height,  -h_lower_depth);
+
+		glColor3f(GREY);
+
+		// draw front
+		glVertex3f(h_lower_width,  -h_height,  -h_lower_depth);
+		glVertex3f(h_upper_width,  h_height,  -h_lower_depth);
+		glVertex3f(-h_upper_width,  h_height, -h_lower_depth);
+		glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
+
+		// draw back
+		glVertex3f(h_lower_width,  -h_height,  h_lower_depth);
+		glVertex3f(h_upper_width,  h_height,  h_lower_depth);
+		glVertex3f(-h_upper_width,  h_height, h_lower_depth);
+		glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
+
 	glEnd();
 }
 
