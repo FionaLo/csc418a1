@@ -97,6 +97,7 @@ const GLdouble FAR_CLIP    = 1000.0;
 // Render settings
 enum { WIREFRAME, SOLID, OUTLINED };	// README: the different render styles
 int renderStyle = WIREFRAME;			// README: the selected render style
+bool outlining = false; // am I currently outlining (used for colour changes)
 
 // Animation settings
 int animate_mode = 0;			// 0 = no anim, 1 = animate
@@ -181,7 +182,49 @@ const float KNEE_MIN             =  0.0;
 const float KNEE_MAX             = 75.0;
 
 
+/* Penguin Body Globals */
+const float TORSO_HEIGHT = 100;
+const float TORSO_UPPER_DEPTH = 0.3 * TORSO_HEIGHT;
+const float TORSO_LOWER_DEPTH = 1.5 * TORSO_UPPER_DEPTH;
+const float TORSO_UPPER_WIDTH = 0.4 * TORSO_HEIGHT;
+const float TORSO_LOWER_WIDTH = 1.5 * TORSO_UPPER_WIDTH;
+const float TORSO_AVG_DEPTH = ((TORSO_LOWER_DEPTH + TORSO_LOWER_DEPTH) / 2);
+
+const float HEAD_HEIGHT = 0.5 * TORSO_HEIGHT;
+const float HEAD_LOWER_WIDTH = 1.3 * TORSO_UPPER_WIDTH;
+const float HEAD_UPPER_WIDTH = 0.8 * HEAD_LOWER_WIDTH;
+const float HEAD_LOWER_DEPTH = 1.2 * TORSO_UPPER_DEPTH;
+const float HEAD_UPPER_DEPTH = 0.8 * HEAD_LOWER_DEPTH;
+
+const float BEAK_HEIGHT = 0.2 * HEAD_HEIGHT;
+const float BEAK_LOWER_WIDTH = 0.5 * HEAD_LOWER_WIDTH;
+const float BEAK_UPPER_WIDTH = 0.8 * BEAK_LOWER_WIDTH;
+const float BEAK_LOWER_DEPTH = 0.3 * HEAD_LOWER_DEPTH;
+const float BEAK_UPPER_DEPTH = 0.8 * BEAK_LOWER_DEPTH;
+
+const float LEG_LENGTH = TORSO_HEIGHT * 0.15;
+const float LEG_WIDTH = TORSO_LOWER_DEPTH * 0.1;
+
+const float FOOT_THICKNESS = TORSO_HEIGHT * 0.05;
+const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.9;
+const float FOOT_WIDTH = TORSO_LOWER_WIDTH * 0.25;
+
+const float FIN_HEIGHT = TORSO_HEIGHT / 2;
+const float FIN_UPPER_DEPTH = TORSO_LOWER_DEPTH * 0.2;
+const float FIN_LOWER_DEPTH = TORSO_UPPER_DEPTH * 0.2;
+const float FIN_LOWER_WIDTH = TORSO_UPPER_WIDTH / 3;
+const float FIN_UPPER_WIDTH = TORSO_LOWER_WIDTH / 3;
+const float FIN_Z_ROT = 15;
+const float FIN_X_ROT = 15;
+const float FIN_AVG_DEPTH = (FIN_LOWER_DEPTH + FIN_UPPER_DEPTH) / 2;
+
+const float LOWER_FIN_WIDTH = FIN_LOWER_WIDTH;
+const float LOWER_FIN_HEIGHT = FIN_HEIGHT * 0.3;
+const float LOWER_FIN_DEPTH = FIN_LOWER_DEPTH;
+
 // ***********  FUNCTION HEADER DECLARATIONS ****************
+
+#define COLOUR_CHANGE(COLOR) if (!outlining) { glColor3f(COLOR); }
 
 
 // Initialization functions
@@ -204,6 +247,7 @@ Vector getInterpolatedJointDOFS(float time);
 void drawCube();
 void drawTorso(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth);
 void drawTriangle(const float thickness, const float width, const float height);
+void drawPenguin();
 
 // Image functions
 void writeFrame(char* filename, bool pgm, bool frontBuffer);
@@ -861,59 +905,56 @@ void display(void)
 	//   rendered.
     ///////////////////////////////////////////////////////////
 
-    const float TORSO_HEIGHT = 100;
-    const float TORSO_UPPER_DEPTH = 0.3 * TORSO_HEIGHT;
-    const float TORSO_LOWER_DEPTH = 1.5 * TORSO_UPPER_DEPTH;
-    const float TORSO_UPPER_WIDTH = 0.4 * TORSO_HEIGHT;
-    const float TORSO_LOWER_WIDTH = 1.5 * TORSO_UPPER_WIDTH;
-    const float TORSO_AVG_DEPTH = ((TORSO_LOWER_DEPTH + TORSO_LOWER_DEPTH) / 2);
 
-    const float HEAD_HEIGHT = 0.5 * TORSO_HEIGHT;
-    const float HEAD_LOWER_WIDTH = 1.3 * TORSO_UPPER_WIDTH;
-    const float HEAD_UPPER_WIDTH = 0.8 * HEAD_LOWER_WIDTH;
-    const float HEAD_LOWER_DEPTH = 1.2 * TORSO_UPPER_DEPTH;
-    const float HEAD_UPPER_DEPTH = 0.8 * HEAD_LOWER_DEPTH;
-
-    const float BEAK_HEIGHT = 0.2 * HEAD_HEIGHT;
-    const float BEAK_LOWER_WIDTH = 0.5 * HEAD_LOWER_WIDTH;
-    const float BEAK_UPPER_WIDTH = 0.8 * BEAK_LOWER_WIDTH;
-    const float BEAK_LOWER_DEPTH = 0.3 * HEAD_LOWER_DEPTH;
-    const float BEAK_UPPER_DEPTH = 0.8 * BEAK_LOWER_DEPTH;
-
-    const float LEG_LENGTH = TORSO_HEIGHT * 0.15;
-    const float LEG_WIDTH = TORSO_LOWER_DEPTH * 0.1;
-
-    const float FOOT_THICKNESS = TORSO_HEIGHT * 0.05;
-    const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.9;
-    const float FOOT_WIDTH = TORSO_LOWER_WIDTH * 0.25;
-
-    const float FIN_HEIGHT = TORSO_HEIGHT / 2;
-    const float FIN_UPPER_DEPTH = TORSO_LOWER_DEPTH * 0.2;
-    const float FIN_LOWER_DEPTH = TORSO_UPPER_DEPTH * 0.2;
-    const float FIN_LOWER_WIDTH = TORSO_UPPER_WIDTH / 3;
-    const float FIN_UPPER_WIDTH = TORSO_LOWER_WIDTH / 3;
-    const float FIN_Z_ROT = 15;
-    const float FIN_X_ROT = 15;
-    const float FIN_AVG_DEPTH = (FIN_LOWER_DEPTH + FIN_UPPER_DEPTH) / 2;
-
-    const float LOWER_FIN_WIDTH = FIN_LOWER_WIDTH;
-    const float LOWER_FIN_HEIGHT = FIN_HEIGHT * 0.3;
-    const float LOWER_FIN_DEPTH = FIN_LOWER_DEPTH;
 
 	// SAMPLE CODE **********
-	//
+
+	// determine render style and set glPolygonMode appropriately
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_RESCALE_NORMAL);
+	glShadeModel(GL_FLAT);
+	if (renderStyle == WIREFRAME) {
+		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		drawPenguin();
+	} else if (renderStyle == SOLID) { 
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		drawPenguin();
+	} else if (renderStyle == OUTLINED) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		drawPenguin();
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glEnable(GL_POLYGON_OFFSET_LINE);
+		glPolygonOffset(1, 5);
+		glColor3f(BLACK);
+		glLineWidth(5);
+		outlining = true;
+		drawPenguin();
+		outlining = false;
+		glDisable(GL_POLYGON_OFFSET_LINE);
+	}
+
+	// SAMPLE CODE **********
+
+    // Execute any GL functions that are in the queue just to be safe
+    glFlush();
+
+	// Dump frame to file, if requested
+	if( frameToFile )
+	{
+		sprintf(filenameF, "frame%03d.ppm", frameNumber);
+		writeFrame(filenameF, false, false);
+	}
+
+    // Now, show the frame buffer that we just drew into.
+    // (this prevents flickering).
+    glutSwapBuffers();
+}
+
+void drawPenguin() {
 	glPushMatrix();
 
- 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_RESCALE_NORMAL);
-		if (renderStyle == WIREFRAME) {
-			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-		} else if (renderStyle == SOLID) {
-			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
-		}
-
-		// determine render style and set glPolygonMode appropriately
-
+		// Root transfomrations
 		glTranslatef(joint_ui_data->getDOF(Keyframe::ROOT_TRANSLATE_X),
 					 joint_ui_data->getDOF(Keyframe::ROOT_TRANSLATE_Y),
 					 joint_ui_data->getDOF(Keyframe::ROOT_TRANSLATE_Z));
@@ -976,25 +1017,7 @@ void display(void)
 				drawTriangle(FOOT_THICKNESS, FOOT_WIDTH, FOOT_HEIGHT);
 			glPopMatrix();
 		glPopMatrix();
-
-
 	glPopMatrix();
-	//
-	// SAMPLE CODE **********
-
-    // Execute any GL functions that are in the queue just to be safe
-    glFlush();
-
-	// Dump frame to file, if requested
-	if( frameToFile )
-	{
-		sprintf(filenameF, "frame%03d.ppm", frameNumber);
-		writeFrame(filenameF, false, false);
-	}
-
-    // Now, show the frame buffer that we just drew into.
-    // (this prevents flickering).
-    glutSwapBuffers();
 }
 
 
@@ -1041,7 +1064,6 @@ void drawCube()
 {
 	glBegin(GL_QUADS);
 		// draw front face
-		glColor3f(BLUE);
 		glVertex3f(-1.0, -1.0, 1.0);
 		glVertex3f( 1.0, -1.0, 1.0);
 		glVertex3f( 1.0,  1.0, 1.0);
@@ -1054,7 +1076,6 @@ void drawCube()
 		glVertex3f( 1.0,  1.0, -1.0);
 
 		// draw left face
-		glColor3f(GREY);
 		glVertex3f(-1.0, -1.0, -1.0);
 		glVertex3f(-1.0, -1.0,  1.0);
 		glVertex3f(-1.0,  1.0,  1.0);
@@ -1090,15 +1111,11 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 	const float h_height = height / 2;
 	glBegin(GL_QUADS);
 
-		glColor3f(GREY);
-
 		// draw top
 		glVertex3f(h_upper_width, h_height, h_upper_depth);
 		glVertex3f(h_upper_width, h_height, -h_upper_depth);
 		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
 		glVertex3f(-h_upper_width,  h_height, h_upper_depth);
-
-		glColor3f(ORANGE);
 
 		// draw bottom
 		glVertex3f(h_lower_width, -h_height, h_lower_depth);
@@ -1106,15 +1123,11 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 		glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
 		glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
 
-		glColor3f(BLUE);
-
 		// draw left side
 		glVertex3f(-h_lower_width, -h_height,  h_lower_depth);
 		glVertex3f(-h_lower_width, -h_height,  -h_lower_depth);
 		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
 		glVertex3f(-h_upper_width,  h_height,  h_upper_depth);
-
-		glColor3f(RED);
 
 		// draw right side
 		glVertex3f(h_lower_width, -h_height,  h_lower_depth);
@@ -1122,15 +1135,11 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 		glVertex3f(h_upper_width,  h_height, -h_upper_depth);
 		glVertex3f(h_upper_width,  h_height,  h_upper_depth);
 
-		glColor3f(BLACK);
-
 		// draw front
 		glVertex3f(h_lower_width,  -h_height,  h_lower_depth);
 		glVertex3f(h_upper_width,  h_height,  h_upper_depth);
 		glVertex3f(-h_upper_width,  h_height, h_upper_depth);
 		glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
-
-		glColor3f(WHITE);
 
 		// draw back
 		glVertex3f(h_lower_width,  -h_height,  -h_lower_depth);
