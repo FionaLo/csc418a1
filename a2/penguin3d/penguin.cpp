@@ -97,7 +97,12 @@ const GLdouble FAR_CLIP    = 1000.0;
 // Render settings
 enum { WIREFRAME, SOLID, OUTLINED };	// README: the different render styles
 int renderStyle = WIREFRAME;			// README: the selected render style
+enum { MATTE, REGULAR, METALLIC };
+int renderMaterial = REGULAR;
 bool outlining = false; // am I currently outlining (used for colour changes)
+enum { NO_LIGHTING, LIGHTING };
+int lightingMode = NO_LIGHTING;
+GLfloat light_color[4] = { 1, 1, 1, 0 };
 
 // Animation settings
 int animate_mode = 0;			// 0 = no anim, 1 = animate
@@ -221,6 +226,8 @@ const float FIN_AVG_DEPTH = (FIN_LOWER_DEPTH + FIN_UPPER_DEPTH) / 2;
 const float LOWER_FIN_WIDTH = FIN_LOWER_WIDTH;
 const float LOWER_FIN_HEIGHT = FIN_HEIGHT * 0.3;
 const float LOWER_FIN_DEPTH = FIN_LOWER_DEPTH;
+
+const float PENGUIN_HEIGHT = TORSO_HEIGHT + LEG_LENGTH + HEAD_HEIGHT;
 
 // ***********  FUNCTION HEADER DECLARATIONS ****************
 
@@ -721,6 +728,25 @@ void initGlui()
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Wireframe");
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Solid");
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Solid w/ outlines");
+
+	// Create control to specify the material style
+	glui_panel = glui_render->add_panel("Material Style");
+	glui_radio_group = glui_render->add_radiogroup_to_panel(glui_panel, &renderMaterial);
+	glui_render->add_radiobutton_to_group(glui_radio_group, "Matte");
+	glui_render->add_radiobutton_to_group(glui_radio_group, "Regular");
+	glui_render->add_radiobutton_to_group(glui_radio_group, "Metallic");
+
+	// Create control to specify the material style
+	glui_panel = glui_render->add_panel("Lighting");
+	glui_radio_group = glui_render->add_radiogroup_to_panel(glui_panel, &lightingMode);
+	glui_render->add_radiobutton_to_group(glui_radio_group, "No Lighting");
+	glui_render->add_radiobutton_to_group(glui_radio_group, "Lighting");
+
+	glui_spinner = glui_joints->add_spinner_to_panel(glui_panel, "R", GLUI_SPINNER_FLOAT, &light_color[0]);
+	glui_spinner->set_float_limits(0, 1, GLUI_LIMIT_CLAMP);
+	glui_spinner->set_speed(SPINNER_SPEED);
+
+
 	//
 	// ***************************************************
 
@@ -912,6 +938,33 @@ void display(void)
 	// determine render style and set glPolygonMode appropriately
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_RESCALE_NORMAL);
+	if (lightingMode == LIGHTING) {
+		glEnable(GL_LIGHTING);
+		GLfloat light_pos[] = { 0, PENGUIN_HEIGHT * 2, 0, 1 };
+	    const GLfloat ambient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+	    const GLfloat specular[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+	    const GLfloat diffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		glLightfv(GL_LIGHT0, GL_AMBIENT, ambient );
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse );
+		glLightfv(GL_LIGHT0, GL_SPECULAR, specular );
+		glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
+		glEnable(GL_LIGHT0);		
+	} else {
+		glDisable(GL_LIGHTING);
+	}
+
+	if (renderMaterial == METALLIC) {
+		glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 100 );
+		const GLfloat ambient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+	    const GLfloat specular[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+	    const GLfloat diffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	} else {
+		glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 0 );
+	}
+
 	glShadeModel(GL_FLAT);
 	if (renderStyle == WIREFRAME) {
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
