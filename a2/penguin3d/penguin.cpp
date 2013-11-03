@@ -203,6 +203,7 @@ void motion(int x, int y);
 Vector getInterpolatedJointDOFS(float time);
 void drawCube();
 void drawTorso(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth);
+void drawTriangle(const float thickness, const float width, const float height);
 
 // Image functions
 void writeFrame(char* filename, bool pgm, bool frontBuffer);
@@ -310,13 +311,15 @@ void updateKeyframeButton(int)
 	///////////////////////////////////////////////////////////
 
 	// Get the keyframe ID from the UI
-	int keyframeID = 0;
+	int keyframeID = joint_ui_data->getID();
 
 	// Update the 'maxValidKeyframe' index variable
 	// (it will be needed when doing the interpolation)
+	maxValidKeyframe = std::max(maxValidKeyframe, keyframeID);
 
 	// Update the appropriate entry in the 'keyframes' array
 	// with the 'joint_ui_data' data
+	keyframes[keyframeID] = *joint_ui_data;
 
 	// Let the user know the values have been updated
 	sprintf(msg, "Status: Keyframe %d updated successfully", keyframeID);
@@ -863,6 +866,7 @@ void display(void)
     const float TORSO_LOWER_DEPTH = 1.5 * TORSO_UPPER_DEPTH;
     const float TORSO_UPPER_WIDTH = 0.4 * TORSO_HEIGHT;
     const float TORSO_LOWER_WIDTH = 1.5 * TORSO_UPPER_WIDTH;
+    const float TORSO_AVG_DEPTH = ((TORSO_LOWER_DEPTH + TORSO_LOWER_DEPTH) / 2);
 
     const float HEAD_HEIGHT = 0.5 * TORSO_HEIGHT;
     const float HEAD_LOWER_WIDTH = 1.3 * TORSO_UPPER_WIDTH;
@@ -876,13 +880,37 @@ void display(void)
     const float BEAK_LOWER_DEPTH = 0.3 * HEAD_LOWER_DEPTH;
     const float BEAK_UPPER_DEPTH = 0.8 * BEAK_LOWER_DEPTH;
 
+    const float LEG_LENGTH = TORSO_HEIGHT * 0.15;
+    const float LEG_WIDTH = TORSO_LOWER_DEPTH * 0.1;
+
+    const float FOOT_THICKNESS = TORSO_HEIGHT * 0.05;
+    const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.9;
+    const float FOOT_WIDTH = TORSO_LOWER_WIDTH * 0.25;
+
+    const float FIN_HEIGHT = TORSO_HEIGHT / 2;
+    const float FIN_UPPER_DEPTH = TORSO_LOWER_DEPTH * 0.2;
+    const float FIN_LOWER_DEPTH = TORSO_UPPER_DEPTH * 0.2;
+    const float FIN_LOWER_WIDTH = TORSO_UPPER_WIDTH / 3;
+    const float FIN_UPPER_WIDTH = TORSO_LOWER_WIDTH / 3;
+    const float FIN_Z_ROT = 15;
+    const float FIN_X_ROT = 15;
+    const float FIN_AVG_DEPTH = (FIN_LOWER_DEPTH + FIN_UPPER_DEPTH) / 2;
+
+    const float LOWER_FIN_WIDTH = FIN_LOWER_WIDTH;
+    const float LOWER_FIN_HEIGHT = FIN_HEIGHT * 0.3;
+    const float LOWER_FIN_DEPTH = FIN_LOWER_DEPTH;
+
 	// SAMPLE CODE **********
 	//
 	glPushMatrix();
 
  		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_RESCALE_NORMAL);
-		glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+		if (renderStyle == WIREFRAME) {
+			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		} else if (renderStyle == SOLID) {
+			glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
+		}
 
 		// determine render style and set glPolygonMode appropriately
 
@@ -890,25 +918,65 @@ void display(void)
 					 joint_ui_data->getDOF(Keyframe::ROOT_TRANSLATE_Y),
 					 joint_ui_data->getDOF(Keyframe::ROOT_TRANSLATE_Z));
 
-		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_X),
-					 1, 0, 0);
-		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Y),
-			 0, 1, 0);
-		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z),
-			 0, 0, 1);
+		// note that since rotations are not commutative, this order matters!
+		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_X), 1, 0, 0);
+		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Y), 0, 1, 0);
+		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z), 0, 0, 1);
 
 		drawTorso(TORSO_HEIGHT, TORSO_UPPER_WIDTH, TORSO_LOWER_WIDTH, TORSO_UPPER_DEPTH, TORSO_LOWER_DEPTH);
 		glPushMatrix();
+			//glRotatef(-getDOF(Keyframe::L_SHOULDER_PITCH))
+			glTranslatef(0, 0, TORSO_AVG_DEPTH / 2);
+			glRotatef(-FIN_Z_ROT, 0, 0, 1);
+			drawTorso(FIN_HEIGHT, FIN_UPPER_WIDTH, FIN_LOWER_WIDTH, FIN_UPPER_DEPTH, FIN_LOWER_DEPTH);
+			// glPushMatrix();
+			// 	// TODO: consider how joints were done before... glRotatef(joint_ui_data->getDOF(Keyframe::L_ELBOW), 1, 0, 0);
+			// 	glTranslatef(0, -FIN_HEIGHT / 2, FIN_LOWER_DEPTH / 2);
+			// 	glScalef(LOWER_FIN_WIDTH / 2, LOWER_FIN_HEIGHT / 2, FIN_AVG_DEPTH / 2);
+			// 	drawCube();
+			// glPopMatrix();
+		glPopMatrix();
+		// glPushMatrix();
+		// 	glTranslatef(0, 0, -TORSO_AVG_DEPTH / 2);
+		// 	glRotatef(FIN_X_ROT, 1, 0, 0);
+		// 	glRotatef(-FIN_Z_ROT, 0, 0, 1);
+		// 	drawTorso(FIN_HEIGHT, FIN_UPPER_WIDTH, FIN_LOWER_WIDTH, FIN_UPPER_DEPTH, FIN_LOWER_DEPTH);
+		// glPopMatrix();
+
+		// upper body
+		glPushMatrix();
 			glTranslatef(0, TORSO_HEIGHT / 2 + HEAD_HEIGHT / 2, 0); // move head up
+			glRotatef(joint_ui_data->getDOF(Keyframe::HEAD), 0, 1, 0); // rotate head
 			drawTorso(HEAD_HEIGHT, HEAD_UPPER_WIDTH, HEAD_LOWER_WIDTH, HEAD_UPPER_DEPTH, HEAD_LOWER_DEPTH);
 			glPushMatrix();
+				const float beak_slider_trans = (joint_ui_data->getDOF(Keyframe::BEAK) * BEAK_HEIGHT) / 2;
 				glTranslatef(- HEAD_LOWER_WIDTH / 2, BEAK_HEIGHT / 2, 0); // move beak up to head
-				drawTorso(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
-				glTranslatef(0, - BEAK_HEIGHT / 2, 0); // move beak up to head
-				glScalef(1.0, -1.0, 1.0);
-				drawTorso(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
+				glPushMatrix();
+					glTranslatef(0, beak_slider_trans, 0); 
+					drawTorso(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
+				glPopMatrix();
+				glPushMatrix();
+					glTranslatef(0, - BEAK_HEIGHT - beak_slider_trans, 0); // move beak up to head
+					glScalef(1, -1, 1);
+					drawTorso(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
+				glPopMatrix();
 			glPopMatrix();
 		glPopMatrix();
+
+		// lower body
+		glPushMatrix();
+			glTranslatef(0, -TORSO_HEIGHT / 2 - LEG_LENGTH, -TORSO_LOWER_DEPTH / 4);
+			glPushMatrix();
+				glScalef(LEG_WIDTH, LEG_LENGTH, LEG_WIDTH);
+				drawCube();
+			glPopMatrix();
+			glPushMatrix();
+				glTranslatef(-FOOT_WIDTH, -LEG_LENGTH / 2 - FOOT_THICKNESS, 0);
+				glRotatef(-90, 0, 1, 0);
+				drawTriangle(FOOT_THICKNESS, FOOT_WIDTH, FOOT_HEIGHT);
+			glPopMatrix();
+		glPopMatrix();
+
 
 	glPopMatrix();
 	//
@@ -1069,6 +1137,47 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 		glVertex3f(h_upper_width,  h_height,  -h_upper_depth);
 		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
 		glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
+
+	glEnd();
+}
+
+// isocelles
+void drawTriangle(const float thickness, const float width, const float height) {
+	const float h_thickness = thickness / 2;
+	const float h_width = width / 2;
+	const float h_height = height / 2;
+
+	glBegin(GL_TRIANGLES);
+
+		// draw top
+		glVertex3f(0,  h_thickness,  -h_height);
+		glVertex3f(h_width,  h_thickness,  h_height);
+		glVertex3f(-h_width, h_thickness, h_height);
+
+		// draw bottom
+		glVertex3f(0,  -h_thickness,  -h_height);
+		glVertex3f(h_width,  -h_thickness,  h_height);
+		glVertex3f(-h_width, -h_thickness, h_height);
+
+
+	glEnd();
+	glBegin(GL_QUADS);
+
+		glVertex3f(0,  h_thickness,  -h_height);
+		glVertex3f(0,  -h_thickness,  -h_height);
+		glVertex3f(h_width,  -h_thickness,  h_height);
+		glVertex3f(h_width,  h_thickness,  h_height);
+
+		glVertex3f(h_width,  -h_thickness,  h_height);
+		glVertex3f(h_width,  h_thickness,  h_height);
+		glVertex3f(-h_width,  h_thickness,  h_height);
+		glVertex3f(-h_width,  -h_thickness,  h_height);
+
+		glVertex3f(-h_width,  h_thickness,  h_height);
+		glVertex3f(-h_width,  -h_thickness,  h_height);
+		glVertex3f(0,  -h_thickness,  -h_height);
+		glVertex3f(0,  h_thickness,  -h_height);
+
 
 	glEnd();
 }
