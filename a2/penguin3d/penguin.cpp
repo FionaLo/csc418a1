@@ -158,7 +158,7 @@ const float ROOT_TRANSLATE_X_MAX =  5.0;
 const float ROOT_TRANSLATE_Y_MIN = -5.0;
 const float ROOT_TRANSLATE_Y_MAX =  5.0;
 const float ROOT_TRANSLATE_Z_MIN = -100;
-const float ROOT_TRANSLATE_Z_MAX =  5.0;
+const float ROOT_TRANSLATE_Z_MAX =  100;
 const float ROOT_ROTATE_X_MIN    = -180.0;
 const float ROOT_ROTATE_X_MAX    =  180.0;
 const float ROOT_ROTATE_Y_MIN    = -180.0;
@@ -255,6 +255,9 @@ void drawCube();
 void drawTorso(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth);
 void drawTriangle(const float thickness, const float width, const float height);
 void drawPenguin();
+void drawLeg(bool front);
+void drawFin(bool front);
+void jointAt(const float x, const float y, const float z, const float &rot, const char axis);
 
 // Image functions
 void writeFrame(char* filename, bool pgm, bool frontBuffer);
@@ -962,11 +965,12 @@ void display(void)
 		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
 	} else {
-		glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 0 );
+		// glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 0 );
 	}
 
 	glShadeModel(GL_FLAT);
 	if (renderStyle == WIREFRAME) {
+		glLineWidth(1);
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		drawPenguin();
 	} else if (renderStyle == SOLID) { 
@@ -1005,6 +1009,7 @@ void display(void)
 }
 
 void drawPenguin() {
+	COLOUR_CHANGE(WHITE)
 	glPushMatrix();
 
 		// Root transfomrations
@@ -1059,18 +1064,50 @@ void drawPenguin() {
 
 		// lower body
 		glPushMatrix();
-			glTranslatef(0, -TORSO_HEIGHT / 2 - LEG_LENGTH, -TORSO_LOWER_DEPTH / 4);
-			glPushMatrix();
-				glScalef(LEG_WIDTH, LEG_LENGTH, LEG_WIDTH);
-				drawCube();
-			glPopMatrix();
-			glPushMatrix();
-				glTranslatef(-FOOT_WIDTH, -LEG_LENGTH / 2 - FOOT_THICKNESS, 0);
-				glRotatef(-90, 0, 1, 0);
-				drawTriangle(FOOT_THICKNESS, FOOT_WIDTH, FOOT_HEIGHT);
-			glPopMatrix();
+			glTranslatef(0, -TORSO_HEIGHT / 2 - LEG_LENGTH, 0); // move legs down
+			drawLeg(true);
+			drawLeg(false);
 		glPopMatrix();
 	glPopMatrix();
+}
+
+void drawLeg(bool front) {
+	glPushMatrix();
+		if (front) {
+			glTranslatef(0, 0, TORSO_LOWER_DEPTH / 4);
+		} else {
+			glTranslatef(0, 0, -TORSO_LOWER_DEPTH / 4);
+		}
+		glPushMatrix();
+			glScalef(LEG_WIDTH, LEG_LENGTH, LEG_WIDTH);
+			drawCube();
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(-FOOT_WIDTH, -LEG_LENGTH / 2 - FOOT_THICKNESS, 0);
+			jointAt(FOOT_HEIGHT / 2 - LEG_WIDTH, 0, 0, joint_ui_data->getDOF(front ? Keyframe::L_KNEE : Keyframe::R_KNEE), 'z');
+			glRotatef(-90, 0, 1, 0);
+			drawTriangle(FOOT_THICKNESS, FOOT_WIDTH, FOOT_HEIGHT);
+		glPopMatrix();
+	glPopMatrix();
+}
+
+void drawFin(bool front) {
+
+}
+
+// create a joint at x, y offset from the current location. 
+// the joint's rotation will be controlled by the variable argument
+void jointAt(const float x, const float y, const float z, const float &rot, const char axis) {
+    // keep the current color so we can swap it back later
+    float currentColor[4];
+    glGetFloatv(GL_CURRENT_COLOR, currentColor);
+    glColor3f(RED);
+    glTranslatef(x, y, z); // move origin back 
+    glRotatef(rot, axis == 'x' ? 1 : 0 , axis == 'y' ? 1 : 0, axis == 'z' ? 1 : 0); // rotate around joint
+    glutSolidSphere(1.0, 20.0, 20.0); 
+    glTranslatef(-x, -y, -z); // move origin to joint
+    // restore current color
+    glColor3f(currentColor[0], currentColor[1], currentColor[2]);
 }
 
 
