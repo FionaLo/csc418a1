@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <map>
 
 #include "keyframe.h"
 #include "timer.h"
@@ -257,7 +258,7 @@ void drawTriangle(const float thickness, const float width, const float height);
 void drawPenguin();
 void drawLeg(bool front);
 void drawFin(bool front);
-void jointAt(const float x, const float y, const float z, const float &rot, const char axis);
+void jointAt(const float x, const float y, const float z, const std::map<char, float> rotations);
 
 // Image functions
 void writeFrame(char* filename, bool pgm, bool frontBuffer);
@@ -1076,10 +1077,11 @@ void drawLeg(bool left) {
 		
 		glTranslatef(0, 0, left ? TORSO_LOWER_DEPTH / 4 : -TORSO_LOWER_DEPTH / 4);
 
-		// rotations!
-		jointAt(0, LEG_LENGTH, 0, joint_ui_data->getDOF(left ? Keyframe::L_HIP_ROLL : Keyframe::R_HIP_ROLL), 'x');
-		jointAt(0, LEG_LENGTH, 0, joint_ui_data->getDOF(left ? Keyframe::L_HIP_YAW : Keyframe::R_HIP_YAW), 'y');
-		jointAt(0, LEG_LENGTH, 0, joint_ui_data->getDOF(left ? Keyframe::L_HIP_PITCH : Keyframe::R_HIP_PITCH), 'z');
+		std::map<char, float> leg_rotations;
+		leg_rotations['x'] = joint_ui_data->getDOF(left ? Keyframe::L_HIP_ROLL : Keyframe::R_HIP_ROLL);
+		leg_rotations['y'] = joint_ui_data->getDOF(left ? Keyframe::L_HIP_YAW : Keyframe::R_HIP_YAW);
+		leg_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_HIP_PITCH : Keyframe::R_HIP_PITCH);
+		jointAt(0, LEG_LENGTH, 0, leg_rotations);
 
 		glPushMatrix();
 			glScalef(LEG_WIDTH, LEG_LENGTH, LEG_WIDTH);
@@ -1087,7 +1089,9 @@ void drawLeg(bool left) {
 		glPopMatrix();
 		glPushMatrix();
 			glTranslatef(-FOOT_WIDTH, -LEG_LENGTH / 2 - FOOT_THICKNESS, 0);
-			jointAt(FOOT_HEIGHT / 2 - LEG_WIDTH, 0, 0, joint_ui_data->getDOF(left ? Keyframe::L_KNEE : Keyframe::R_KNEE), 'z');
+			std::map<char, float> knee_rotations;
+			knee_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_KNEE : Keyframe::R_KNEE);
+			jointAt(FOOT_HEIGHT / 2 - LEG_WIDTH, 0, 0, knee_rotations);
 			glRotatef(-90, 0, 1, 0);
 			drawTriangle(FOOT_THICKNESS, FOOT_WIDTH, FOOT_HEIGHT);
 		glPopMatrix();
@@ -1100,17 +1104,25 @@ void drawFin(bool left) {
 
 // create a joint at x, y offset from the current location. 
 // the joint's rotation will be controlled by the variable argument
-void jointAt(const float x, const float y, const float z, const float &rot, const char axis) {
+void jointAt(const float x, const float y, const float z, std::map<char, float> rotations) {
     // keep the current color so we can swap it back later
     float currentColor[4];
     glGetFloatv(GL_CURRENT_COLOR, currentColor);
     glColor3f(RED);
     glTranslatef(x, y, z); // move origin back 
-    glRotatef(rot, axis == 'x' ? 1 : 0 , axis == 'y' ? 1 : 0, axis == 'z' ? 1 : 0); // rotate around joint
-    glutSolidSphere(1.0, 20.0, 20.0); 
+	glutSolidSphere(1.0, 20.0, 20.0); // mark the joint
+	glColor3f(currentColor[0], currentColor[1], currentColor[2]);
+	if (rotations.count('x')) {
+		glRotatef(rotations['x'], 1, 0, 0);
+	}
+	if (rotations.count('y')) {
+		glRotatef(rotations['y'], 0, 1, 0);
+	}
+	if (rotations.count('z')) {
+		glRotatef(rotations['z'], 0, 0, 1);
+	}
     glTranslatef(-x, -y, -z); // move origin to joint
     // restore current color
-    glColor3f(currentColor[0], currentColor[1], currentColor[2]);
 }
 
 
