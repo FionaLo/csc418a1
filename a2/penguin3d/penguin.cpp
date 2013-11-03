@@ -1071,27 +1071,30 @@ void drawPenguin() {
 	glPopMatrix();
 }
 
-void drawLeg(bool front) {
+void drawLeg(bool left) {
 	glPushMatrix();
-		if (front) {
-			glTranslatef(0, 0, TORSO_LOWER_DEPTH / 4);
-		} else {
-			glTranslatef(0, 0, -TORSO_LOWER_DEPTH / 4);
-		}
+		
+		glTranslatef(0, 0, left ? TORSO_LOWER_DEPTH / 4 : -TORSO_LOWER_DEPTH / 4);
+
+		// rotations!
+		jointAt(0, LEG_LENGTH, 0, joint_ui_data->getDOF(left ? Keyframe::L_HIP_ROLL : Keyframe::R_HIP_ROLL), 'x');
+		jointAt(0, LEG_LENGTH, 0, joint_ui_data->getDOF(left ? Keyframe::L_HIP_YAW : Keyframe::R_HIP_YAW), 'y');
+		jointAt(0, LEG_LENGTH, 0, joint_ui_data->getDOF(left ? Keyframe::L_HIP_PITCH : Keyframe::R_HIP_PITCH), 'z');
+
 		glPushMatrix();
 			glScalef(LEG_WIDTH, LEG_LENGTH, LEG_WIDTH);
 			drawCube();
 		glPopMatrix();
 		glPushMatrix();
 			glTranslatef(-FOOT_WIDTH, -LEG_LENGTH / 2 - FOOT_THICKNESS, 0);
-			jointAt(FOOT_HEIGHT / 2 - LEG_WIDTH, 0, 0, joint_ui_data->getDOF(front ? Keyframe::L_KNEE : Keyframe::R_KNEE), 'z');
+			jointAt(FOOT_HEIGHT / 2 - LEG_WIDTH, 0, 0, joint_ui_data->getDOF(left ? Keyframe::L_KNEE : Keyframe::R_KNEE), 'z');
 			glRotatef(-90, 0, 1, 0);
 			drawTriangle(FOOT_THICKNESS, FOOT_WIDTH, FOOT_HEIGHT);
 		glPopMatrix();
 	glPopMatrix();
 }
 
-void drawFin(bool front) {
+void drawFin(bool left) {
 
 }
 
