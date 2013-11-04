@@ -105,6 +105,7 @@ enum { NO_LIGHTING, LIGHTING };
 int lightingMode = NO_LIGHTING;
 GLfloat light_color[4] = { 1, 1, 1, 0 };
 float light_angle_xy = 0;
+int colored_materials = 0;
 
 // Animation settings
 int animate_mode = 0;			// 0 = no anim, 1 = animate
@@ -747,9 +748,10 @@ void initGlui()
 	glui_radio_group = glui_render->add_radiogroup_to_panel(glui_panel, &lightingMode);
 	glui_render->add_radiobutton_to_group(glui_radio_group, "No Lighting");
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Lighting");
+	glui_render->add_checkbox_to_panel(glui_panel, "Colored Materials", &colored_materials);
 
 	glui_spinner = glui_joints->add_spinner_to_panel(glui_panel, "Light Angle XY Plane", GLUI_SPINNER_FLOAT, &light_angle_xy);
-	glui_spinner->set_float_limits(-360, 360, GLUI_LIMIT_CLAMP);
+	glui_spinner->set_float_limits(-360, 360, GLUI_LIMIT_WRAP);
 	glui_spinner->set_speed(SPINNER_SPEED);
 
 
@@ -943,8 +945,16 @@ void display(void)
 
 	// determine render style and set glPolygonMode appropriately
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_RESCALE_NORMAL);
+	glEnable(GL_NORMALIZE);
+	glShadeModel(GL_SMOOTH);
 	if (lightingMode == LIGHTING) {
+		if (colored_materials) {
+			glEnable(GL_COLOR_MATERIAL);
+		} else {
+			glDisable(GL_COLOR_MATERIAL);
+		}
+
+
 		glEnable(GL_LIGHTING);
 		float radius = PENGUIN_HEIGHT * 1.5;
 		float light_x = radius * cos(DEG2RAD(light_angle_xy));
@@ -959,29 +969,39 @@ void display(void)
 			glTranslatef(light_x, light_y, 0);
 			glutSolidSphere(5, 20, 20);
 		glPopMatrix();
-	    const GLfloat ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-	    const GLfloat specular[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-	    const GLfloat diffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+
+
+	    const GLfloat ambient[4] = { 0.1, 0.1, 0.1, 1.0 };
+	    const GLfloat specular[4] = { 1.0, 1.0, 1.0, 1.0 };
+	    const GLfloat diffuse[4] = { 1.0, 1.0, 1.0, 1.0};
 		glLightfv(GL_LIGHT0, GL_AMBIENT, ambient );
 		glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse );
 		glLightfv(GL_LIGHT0, GL_SPECULAR, specular );
 		glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
-		glEnable(GL_LIGHT0);		
+		glEnable(GL_LIGHT0);	
+		if (renderMaterial == METALLIC) {
+			// values for chrome (http://cs.anu.edu.au/~Hugh.Fisher/3dteach/ogl-lighting.html)
+			glMaterialf( GL_FRONT, GL_SHININESS, 0.6 * 128 );
+			const GLfloat ambient[4] = {0.25, 0.25, 0.25, 1.0 };
+		    const GLfloat specular[4] = { 0.774597, 0.774597, 0.774597, 1.0 };
+		    const GLfloat diffuse[4] = { 0.4, 0.4, 0.4, 1.0 };
+			// glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+			glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+		} else if (renderMaterial == MATTE) {
+			glMaterialf( GL_FRONT, GL_SHININESS, 0 );
+			// const GLfloat ambient[4] = {0.19225, 0.19225, 0.19225, 1.0f};
+		    const GLfloat specular[4] = { 0.01, 0.01, 0.01, 1.0 };
+		    const GLfloat diffuse[4] = { 0.70, 0.70, 0.70, 1.0 };
+			// glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+			glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+			glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+		}
 	} else {
 		glDisable(GL_LIGHTING);
 	}
 
-	if (renderMaterial == METALLIC) {
-		glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 100 );
-		const GLfloat ambient[4] = {0.19225, 0.19225, 0.19225, 1.0f};
-	    const GLfloat specular[4] = {0.508273, 0.508273, 0.508273, 1.0f};
-	    const GLfloat diffuse[4] = {0.50754, 0.50754, 0.50754, 1.0f};
-		glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
-		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-	} else {
-		glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 0.4 * 128 );
-	}
+
 
 	glShadeModel(GL_FLAT);
 	if (renderStyle == WIREFRAME) {
@@ -1037,7 +1057,9 @@ void drawPenguin() {
 		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Y), 0, 1, 0);
 		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z), 0, 0, 1);
 
+		COLOUR_CHANGE(BLUE)
 		drawTorso(TORSO_HEIGHT, TORSO_UPPER_WIDTH, TORSO_LOWER_WIDTH, TORSO_UPPER_DEPTH, TORSO_LOWER_DEPTH);
+		COLOUR_CHANGE(WHITE)
 		drawFin(true);
 		drawFin(false);
 
@@ -1045,7 +1067,9 @@ void drawPenguin() {
 		glPushMatrix();
 			glTranslatef(0, TORSO_HEIGHT / 2 + HEAD_HEIGHT / 2, 0); // move head up
 			glRotatef(joint_ui_data->getDOF(Keyframe::HEAD), 0, 1, 0); // rotate head
+			COLOUR_CHANGE(GREY)
 			drawTorso(HEAD_HEIGHT, HEAD_UPPER_WIDTH, HEAD_LOWER_WIDTH, HEAD_UPPER_DEPTH, HEAD_LOWER_DEPTH);
+			COLOUR_CHANGE(ORANGE)
 			glPushMatrix();
 				const float beak_slider_trans = (joint_ui_data->getDOF(Keyframe::BEAK) * BEAK_HEIGHT) / 2;
 				glTranslatef(- HEAD_LOWER_WIDTH / 2, BEAK_HEIGHT / 2, 0); // move beak up to head
@@ -1083,6 +1107,7 @@ void drawLeg(bool left) {
 
 		glPushMatrix();
 			glScalef(LEG_WIDTH, LEG_LENGTH, LEG_WIDTH);
+			COLOUR_CHANGE(GREY)
 			drawCube();
 		glPopMatrix();
 		glPushMatrix();
@@ -1091,6 +1116,7 @@ void drawLeg(bool left) {
 			knee_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_KNEE : Keyframe::R_KNEE);
 			jointAt(FOOT_HEIGHT / 2 - LEG_WIDTH, 0, 0, knee_rotations);
 			glRotatef(-90, 0, 1, 0);
+			COLOUR_CHANGE(ORANGE)
 			drawTriangle(FOOT_THICKNESS, FOOT_WIDTH, FOOT_HEIGHT);
 		glPopMatrix();
 	glPopMatrix();
@@ -1187,40 +1213,41 @@ void drawCube()
 {
 	glBegin(GL_QUADS);
 		// draw front face
-		glVertex3f(-1.0, -1.0, 1.0);
-		glVertex3f( 1.0, -1.0, 1.0);
-		glVertex3f( 1.0,  1.0, 1.0);
-		glVertex3f(-1.0,  1.0, 1.0);
+		glNormal3f(0, 0, 1); glVertex3f(-1.0, -1.0, 1.0);
+		glNormal3f(0, 0, 1); glVertex3f( 1.0, -1.0, 1.0);
+		glNormal3f(0, 0, 1); glVertex3f( 1.0,  1.0, 1.0);
+		glNormal3f(0, 0, 1); glVertex3f(-1.0,  1.0, 1.0);
 
 		// draw back face
-		glVertex3f( 1.0, -1.0, -1.0);
-		glVertex3f(-1.0, -1.0, -1.0);
-		glVertex3f(-1.0,  1.0, -1.0);
-		glVertex3f( 1.0,  1.0, -1.0);
+		glNormal3f(0, 0, -1); glVertex3f( 1.0, -1.0, -1.0);
+		glNormal3f(0, 0, -1); glVertex3f(-1.0, -1.0, -1.0);
+		glNormal3f(0, 0, -1); glVertex3f(-1.0,  1.0, -1.0);
+		glNormal3f(0, 0, -1); glVertex3f( 1.0,  1.0, -1.0);
 
 		// draw left face
-		glVertex3f(-1.0, -1.0, -1.0);
-		glVertex3f(-1.0, -1.0,  1.0);
-		glVertex3f(-1.0,  1.0,  1.0);
-		glVertex3f(-1.0,  1.0, -1.0);
+		glNormal3f(-1, 0, 0); glVertex3f(-1.0, -1.0, -1.0);
+		glNormal3f(-1, 0, 0); glVertex3f(-1.0, -1.0,  1.0);
+		glNormal3f(-1, 0, 0); glVertex3f(-1.0,  1.0,  1.0);
+		glNormal3f(-1, 0, 0); glVertex3f(-1.0,  1.0, -1.0);
 
 		// draw right face
-		glVertex3f( 1.0, -1.0,  1.0);
-		glVertex3f( 1.0, -1.0, -1.0);
-		glVertex3f( 1.0,  1.0, -1.0);
-		glVertex3f( 1.0,  1.0,  1.0);
+		glNormal3f(1, 0, 0); glVertex3f( 1.0, -1.0,  1.0);
+		glNormal3f(1, 0, 0); glVertex3f( 1.0, -1.0, -1.0);
+		glNormal3f(1, 0, 0); glVertex3f( 1.0,  1.0, -1.0);
+		glNormal3f(1, 0, 0); glVertex3f( 1.0,  1.0,  1.0);
 
 		// draw top
-		glVertex3f(-1.0,  1.0,  1.0);
-		glVertex3f( 1.0,  1.0,  1.0);
-		glVertex3f( 1.0,  1.0, -1.0);
-		glVertex3f(-1.0,  1.0, -1.0);
+		glNormal3f(0, 1, 0); glVertex3f(-1.0,  1.0,  1.0);
+		glNormal3f(0, 1, 0); glVertex3f( 1.0,  1.0,  1.0);
+		glNormal3f(0, 1, 0); glVertex3f( 1.0,  1.0, -1.0);
+		glNormal3f(0, 1, 0); glVertex3f(-1.0,  1.0, -1.0);
 
 		// draw bottom
-		glVertex3f(-1.0, -1.0, -1.0);
-		glVertex3f( 1.0, -1.0, -1.0);
-		glVertex3f( 1.0, -1.0,  1.0);
-		glVertex3f(-1.0, -1.0,  1.0);
+		glNormal3f(0, -1, 0); glVertex3f(-1.0, -1.0, -1.0);
+		glNormal3f(0, -1, 0); glVertex3f( 1.0, -1.0, -1.0);
+		glNormal3f(0, -1, 0); glVertex3f( 1.0, -1.0,  1.0);
+		glNormal3f(0, -1, 0); glVertex3f(-1.0, -1.0,  1.0);
+
 	glEnd();
 }
 
@@ -1232,20 +1259,22 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 	const float h_lower_width = lower_width / 2;
 	const float h_lower_depth = lower_depth / 2;	
 	const float h_height = height / 2;
+	const float non_overlap_hwidth = h_lower_width - h_upper_width;
 	glBegin(GL_QUADS);
 
 		// draw top
-		glVertex3f(h_upper_width, h_height, h_upper_depth);
-		glVertex3f(h_upper_width, h_height, -h_upper_depth);
-		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
-		glVertex3f(-h_upper_width,  h_height, h_upper_depth);
+		glNormal3f(0, 1, 0); glVertex3f(h_upper_width, h_height, h_upper_depth);
+		glNormal3f(0, 1, 0); glVertex3f(h_upper_width, h_height, -h_upper_depth);
+		glNormal3f(0, 1, 0); glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
+		glNormal3f(0, 1, 0); glVertex3f(-h_upper_width,  h_height, h_upper_depth);
 
 		// draw bottom
-		glVertex3f(h_lower_width, -h_height, h_lower_depth);
-		glVertex3f(h_lower_width, -h_height, -h_lower_depth);
-		glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
-		glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
+		glNormal3f(0, -1, 0); glVertex3f(h_lower_width, -h_height, h_lower_depth);
+		glNormal3f(0, -1, 0); glVertex3f(h_lower_width, -h_height, -h_lower_depth);
+		glNormal3f(0, -1, 0); glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
+		glNormal3f(0, -1, 0); glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
 
+		// TODO: normals
 		// draw left side
 		glVertex3f(-h_lower_width, -h_height,  h_lower_depth);
 		glVertex3f(-h_lower_width, -h_height,  -h_lower_depth);
@@ -1282,29 +1311,31 @@ void drawTriangle(const float thickness, const float width, const float height) 
 	glBegin(GL_TRIANGLES);
 
 		// draw top
-		glVertex3f(0,  h_thickness,  -h_height);
-		glVertex3f(h_width,  h_thickness,  h_height);
-		glVertex3f(-h_width, h_thickness, h_height);
+		glNormal3f(0, 1, 0); glVertex3f(0,  h_thickness,  -h_height);
+		glNormal3f(0, 1, 0); glVertex3f(h_width,  h_thickness,  h_height);
+		glNormal3f(0, 1, 0); glVertex3f(-h_width, h_thickness, h_height);
 
 		// draw bottom
-		glVertex3f(0,  -h_thickness,  -h_height);
-		glVertex3f(h_width,  -h_thickness,  h_height);
-		glVertex3f(-h_width, -h_thickness, h_height);
+		glNormal3f(0, -1, 0); glVertex3f(0,  -h_thickness,  -h_height);
+		glNormal3f(0, -1, 0); glVertex3f(h_width,  -h_thickness,  h_height);
+		glNormal3f(0, -1, 0); glVertex3f(-h_width, -h_thickness, h_height);
 
 
 	glEnd();
 	glBegin(GL_QUADS);
 
+		// TODO: normals
 		glVertex3f(0,  h_thickness,  -h_height);
 		glVertex3f(0,  -h_thickness,  -h_height);
 		glVertex3f(h_width,  -h_thickness,  h_height);
 		glVertex3f(h_width,  h_thickness,  h_height);
 
-		glVertex3f(h_width,  -h_thickness,  h_height);
-		glVertex3f(h_width,  h_thickness,  h_height);
-		glVertex3f(-h_width,  h_thickness,  h_height);
-		glVertex3f(-h_width,  -h_thickness,  h_height);
+		glNormal3f(0, 0, 1); glVertex3f(h_width,  -h_thickness,  h_height);
+		glNormal3f(0, 0, 1); glVertex3f(h_width,  h_thickness,  h_height);
+		glNormal3f(0, 0, 1); glVertex3f(-h_width,  h_thickness,  h_height);
+		glNormal3f(0, 0, 1); glVertex3f(-h_width,  -h_thickness,  h_height);
 
+		// TODO: normals
 		glVertex3f(-h_width,  h_thickness,  h_height);
 		glVertex3f(-h_width,  -h_thickness,  h_height);
 		glVertex3f(0,  -h_thickness,  -h_height);
