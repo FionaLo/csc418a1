@@ -104,6 +104,7 @@ bool outlining = false; // am I currently outlining (used for colour changes)
 enum { NO_LIGHTING, LIGHTING };
 int lightingMode = NO_LIGHTING;
 GLfloat light_color[4] = { 1, 1, 1, 0 };
+float light_angle_xy = 0;
 
 // Animation settings
 int animate_mode = 0;			// 0 = no anim, 1 = animate
@@ -193,7 +194,7 @@ const float TORSO_HEIGHT = 100;
 const float TORSO_UPPER_DEPTH = 0.3 * TORSO_HEIGHT;
 const float TORSO_LOWER_DEPTH = 1.5 * TORSO_UPPER_DEPTH;
 const float TORSO_UPPER_WIDTH = 0.4 * TORSO_HEIGHT;
-const float TORSO_LOWER_WIDTH = 1.5 * TORSO_UPPER_WIDTH;
+const float TORSO_LOWER_WIDTH = 2 * TORSO_UPPER_WIDTH;
 const float TORSO_AVG_DEPTH = ((TORSO_LOWER_DEPTH + TORSO_LOWER_DEPTH) / 2);
 
 const float HEAD_HEIGHT = 0.5 * TORSO_HEIGHT;
@@ -212,7 +213,7 @@ const float LEG_LENGTH = TORSO_HEIGHT * 0.15;
 const float LEG_WIDTH = TORSO_LOWER_DEPTH * 0.1;
 
 const float FOOT_THICKNESS = TORSO_HEIGHT * 0.05;
-const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.9;
+const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.6;
 const float FOOT_WIDTH = TORSO_LOWER_WIDTH * 0.25;
 
 const float FIN_HEIGHT = TORSO_HEIGHT / 2;
@@ -233,7 +234,8 @@ const float PENGUIN_HEIGHT = TORSO_HEIGHT + LEG_LENGTH + HEAD_HEIGHT;
 // ***********  FUNCTION HEADER DECLARATIONS ****************
 
 #define COLOUR_CHANGE(COLOR) if (!outlining) { glColor3f(COLOR); }
-
+#define DEG2RAD(val) (val / (180 / PI))
+#define RAD2DEG(val) (val * (180 / PI))
 
 // Initialization functions
 void initDS();
@@ -746,8 +748,8 @@ void initGlui()
 	glui_render->add_radiobutton_to_group(glui_radio_group, "No Lighting");
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Lighting");
 
-	glui_spinner = glui_joints->add_spinner_to_panel(glui_panel, "R", GLUI_SPINNER_FLOAT, &light_color[0]);
-	glui_spinner->set_float_limits(0, 1, GLUI_LIMIT_CLAMP);
+	glui_spinner = glui_joints->add_spinner_to_panel(glui_panel, "Light Angle XY Plane", GLUI_SPINNER_FLOAT, &light_angle_xy);
+	glui_spinner->set_float_limits(-360, 360, GLUI_LIMIT_CLAMP);
 	glui_spinner->set_speed(SPINNER_SPEED);
 
 
@@ -944,8 +946,20 @@ void display(void)
 	glEnable(GL_RESCALE_NORMAL);
 	if (lightingMode == LIGHTING) {
 		glEnable(GL_LIGHTING);
-		GLfloat light_pos[] = { 0, PENGUIN_HEIGHT * 2, 0, 1 };
-	    const GLfloat ambient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+		float radius = PENGUIN_HEIGHT * 1.5;
+		float light_x = radius * cos(DEG2RAD(light_angle_xy));
+		float light_y = radius * sin(DEG2RAD(light_angle_xy));
+		GLfloat light_pos[] = { light_x, light_y, 0, 1 };
+		// mark the light's position - a tad confusing since it doesn't rotate with the penguin
+		glPushMatrix();
+			// note that since rotations are not commutative, this order matters!
+			glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_X), 1, 0, 0);
+			glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Y), 0, 1, 0);
+			glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z), 0, 0, 1);
+			glTranslatef(light_x, light_y, 0);
+			glutSolidSphere(5, 20, 20);
+		glPopMatrix();
+	    const GLfloat ambient[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 	    const GLfloat specular[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 	    const GLfloat diffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 		glLightfv(GL_LIGHT0, GL_AMBIENT, ambient );
@@ -959,14 +973,14 @@ void display(void)
 
 	if (renderMaterial == METALLIC) {
 		glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 100 );
-		const GLfloat ambient[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-	    const GLfloat specular[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-	    const GLfloat diffuse[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+		const GLfloat ambient[4] = {0.19225, 0.19225, 0.19225, 1.0f};
+	    const GLfloat specular[4] = {0.508273, 0.508273, 0.508273, 1.0f};
+	    const GLfloat diffuse[4] = {0.50754, 0.50754, 0.50754, 1.0f};
 		glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
 	} else {
-		// glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 0 );
+		glMaterialf( GL_FRONT_AND_BACK, GL_SHININESS, 0.4 * 128 );
 	}
 
 	glShadeModel(GL_FLAT);
@@ -1024,24 +1038,8 @@ void drawPenguin() {
 		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z), 0, 0, 1);
 
 		drawTorso(TORSO_HEIGHT, TORSO_UPPER_WIDTH, TORSO_LOWER_WIDTH, TORSO_UPPER_DEPTH, TORSO_LOWER_DEPTH);
-		glPushMatrix();
-			//glRotatef(-getDOF(Keyframe::L_SHOULDER_PITCH))
-			glTranslatef(0, 0, TORSO_AVG_DEPTH / 2);
-			glRotatef(-FIN_Z_ROT, 0, 0, 1);
-			drawTorso(FIN_HEIGHT, FIN_UPPER_WIDTH, FIN_LOWER_WIDTH, FIN_UPPER_DEPTH, FIN_LOWER_DEPTH);
-			// glPushMatrix();
-			// 	// TODO: consider how joints were done before... glRotatef(joint_ui_data->getDOF(Keyframe::L_ELBOW), 1, 0, 0);
-			// 	glTranslatef(0, -FIN_HEIGHT / 2, FIN_LOWER_DEPTH / 2);
-			// 	glScalef(LOWER_FIN_WIDTH / 2, LOWER_FIN_HEIGHT / 2, FIN_AVG_DEPTH / 2);
-			// 	drawCube();
-			// glPopMatrix();
-		glPopMatrix();
-		// glPushMatrix();
-		// 	glTranslatef(0, 0, -TORSO_AVG_DEPTH / 2);
-		// 	glRotatef(FIN_X_ROT, 1, 0, 0);
-		// 	glRotatef(-FIN_Z_ROT, 0, 0, 1);
-		// 	drawTorso(FIN_HEIGHT, FIN_UPPER_WIDTH, FIN_LOWER_WIDTH, FIN_UPPER_DEPTH, FIN_LOWER_DEPTH);
-		// glPopMatrix();
+		drawFin(true);
+		drawFin(false);
 
 		// upper body
 		glPushMatrix();
@@ -1088,7 +1086,7 @@ void drawLeg(bool left) {
 			drawCube();
 		glPopMatrix();
 		glPushMatrix();
-			glTranslatef(-FOOT_WIDTH, -LEG_LENGTH / 2 - FOOT_THICKNESS, 0);
+			glTranslatef(-FOOT_HEIGHT / 2, -LEG_LENGTH / 2 - FOOT_THICKNESS, 0);
 			std::map<char, float> knee_rotations;
 			knee_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_KNEE : Keyframe::R_KNEE);
 			jointAt(FOOT_HEIGHT / 2 - LEG_WIDTH, 0, 0, knee_rotations);
@@ -1099,7 +1097,27 @@ void drawLeg(bool left) {
 }
 
 void drawFin(bool left) {
-
+	glPushMatrix();
+		glTranslatef(0, 0, left ? TORSO_AVG_DEPTH / 2 : -TORSO_AVG_DEPTH / 2);
+		glRotatef(-15, 0, 0, 1);
+		std::map<char, float> shoulder_rotations;
+		shoulder_rotations['x'] = joint_ui_data->getDOF(left ? Keyframe::L_SHOULDER_ROLL : Keyframe::R_SHOULDER_ROLL);
+		shoulder_rotations['y'] = joint_ui_data->getDOF(left ? Keyframe::L_SHOULDER_YAW : Keyframe::R_SHOULDER_YAW);
+		shoulder_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_SHOULDER_PITCH : Keyframe::R_SHOULDER_PITCH);
+		jointAt(0, FIN_HEIGHT / 2, 0, shoulder_rotations);
+		float angle = atan(((TORSO_LOWER_DEPTH - TORSO_UPPER_DEPTH) / 2) / TORSO_HEIGHT) * 180 / PI;
+		glRotatef(left ? -angle : angle, 1, 0, 0);
+		drawTorso(FIN_HEIGHT, FIN_UPPER_WIDTH, FIN_LOWER_WIDTH, FIN_UPPER_DEPTH, FIN_LOWER_DEPTH);
+		glPushMatrix();
+			glTranslatef(- LOWER_FIN_WIDTH / 4, -FIN_HEIGHT / 2 - LOWER_FIN_HEIGHT / 4 , left ? FIN_LOWER_DEPTH / 2 : -FIN_LOWER_DEPTH / 2);
+			std::map<char, float> elbow_rotations;
+			elbow_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_ELBOW : Keyframe::R_ELBOW);
+			jointAt(0, 0, 0, elbow_rotations);
+			glScalef(LOWER_FIN_WIDTH / 2, LOWER_FIN_HEIGHT / 2, FIN_AVG_DEPTH / 2);
+			glRotatef(60, 0, 0, 1);
+			drawCube();
+		glPopMatrix();
+	glPopMatrix();
 }
 
 // create a joint at x, y offset from the current location. 
