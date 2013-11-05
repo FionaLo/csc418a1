@@ -13,12 +13,12 @@ A. PLEASE ANSWER THE FOLLOWING QUESTIONS (your assignment will not be graded oth
    Academic Honesty policy stated in 
    http://www.artsci.utoronto.ca/osai/students/academic-integrity-basics
 
-   ___Yes   ___No
+   _X_Yes   ___No
 
 
 2. I collaborated on this assignment with another student 
 
-   ___Yes   ___No
+   ___Yes   _X_No
 
    If you checked yes, please supply the following
 
@@ -37,18 +37,18 @@ B. PLACE AN (X) IN FRONT OF PORTIONS OF THE ASSIGNMENT THAT YOU COMPLETED IN FUL
    WE WILL BE ABLE TO MAKE AN ACCURATE ASSESSMENT
 
    
-___   (10 points) Part 2a     3D penguin design
+_X_   (10 points) Part 2a     3D penguin design
                   
-___   (10 points) Part 2b     Basic polygon rendering
+_X_   (10 points) Part 2b     Basic polygon rendering
 
-___   ( 5 points) Part 2c     Rendering metallic and matte penguin
+_X_   ( 5 points) Part 2c     Rendering metallic and matte penguin
 
-___   (10 points) Part 2d     Light source control
+_X_   (10 points) Part 2d     Light source control
                   
-___   ( 5 points) Part 2e     Keyframe functionality & supplied keyframe file
+_X_   ( 5 points) Part 2e     Keyframe functionality & supplied keyframe file
 
-___   ( 5 points) Part 2f     Catmull-Rom interpolation functionality
+_X_   ( 5 points) Part 2f     Catmull-Rom interpolation functionality
 
-___   ( 5 points) Part 2g     Written report
+_X_   ( 5 points) Part 2g     Written report
 
 -------------------------------------------------------------------------------- 

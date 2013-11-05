@@ -104,7 +104,6 @@ bool outlining = false; // am I currently outlining (used to keep the lines blac
 enum { NO_LIGHTING, LIGHTING };
 int lightingMode = NO_LIGHTING;
 GLfloat light_color[4] = { 1, 1, 1, 0 }; // white light
-float light_angle_xy = 0; // the user controlled angle of the light
 int colored_materials = 0; // enable color when lighting is on
 
 // Animation settings
@@ -157,8 +156,8 @@ Keyframe* joint_ui_data;
 // README: To change the range of a particular DOF,
 // simply change the appropriate min/max values below
 // TODO: think seriously
-const float ROOT_TRANSLATE_X_MIN = -5.0;
-const float ROOT_TRANSLATE_X_MAX =  5.0;
+const float ROOT_TRANSLATE_X_MIN =  -5;
+const float ROOT_TRANSLATE_X_MAX =  5;
 const float ROOT_TRANSLATE_Y_MIN = -5.0;
 const float ROOT_TRANSLATE_Y_MAX =  5.0;
 const float ROOT_TRANSLATE_Z_MIN = -100;
@@ -745,17 +744,13 @@ void initGlui()
 	glui_panel = glui_render->add_panel("Material Style");
 	glui_radio_group = glui_render->add_radiogroup_to_panel(glui_panel, &renderMaterial);
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Matte");
-	glui_render->add_radiobutton_to_group(glui_radio_group, "Regular");
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Metallic");
 
 	// Create control to specify the material style
 	glui_panel = glui_render->add_panel("Lighting");
-	glui_radio_group = glui_render->add_radiogroup_to_panel(glui_panel, &lightingMode);
-	glui_render->add_radiobutton_to_group(glui_radio_group, "No Lighting");
-	glui_render->add_radiobutton_to_group(glui_radio_group, "Lighting");
 	glui_render->add_checkbox_to_panel(glui_panel, "Colored Materials", &colored_materials);
 
-	glui_spinner = glui_joints->add_spinner_to_panel(glui_panel, "Light Angle XY Plane", GLUI_SPINNER_FLOAT, &light_angle_xy);
+	glui_spinner = glui_joints->add_spinner_to_panel(glui_panel, "Light Angle XY Plane", GLUI_SPINNER_FLOAT, joint_ui_data->getDOFPtr(Keyframe::LIGHT_ANGLE_XY));
 	glui_spinner->set_float_limits(-360, 360, GLUI_LIMIT_WRAP);
 	glui_spinner->set_speed(SPINNER_SPEED);
 
@@ -952,29 +947,25 @@ void display(void)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_NORMALIZE);
 	glShadeModel(GL_SMOOTH);
-	if (lightingMode == LIGHTING) {
+	if (renderStyle == MATTE || renderStyle == METALLIC) {
+
 		if (colored_materials) {
 			glEnable(GL_COLOR_MATERIAL);
 		} else {
 			glDisable(GL_COLOR_MATERIAL);
 		}
 
-
 		glEnable(GL_LIGHTING);
 		float radius = PENGUIN_HEIGHT * 1.5;
+		float light_angle_xy = joint_ui_data->getDOF(Keyframe::LIGHT_ANGLE_XY);
 		float light_x = radius * cos(DEG2RAD(light_angle_xy));
 		float light_y = radius * sin(DEG2RAD(light_angle_xy));
 		GLfloat light_pos[] = { light_x, light_y, 0, 0 }; // directional light
-		// mark the light's position
+		// mark the light's angle
 		glPushMatrix();
-			// note that since rotations are not commutative, this order matters!
-			glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_X), 1, 0, 0);
-			glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Y), 0, 1, 0);
-			glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z), 0, 0, 1);
 			glTranslatef(light_x, light_y, 0);
 			glutSolidSphere(5, 20, 20);
 		glPopMatrix();
-
 
 	    const GLfloat ambient[4] = { 0.1, 0.1, 0.1, 1.0 };
 	    const GLfloat specular[4] = { 1.0, 1.0, 1.0, 1.0 };
@@ -984,31 +975,10 @@ void display(void)
 		glLightfv(GL_LIGHT0, GL_SPECULAR, specular );
 		glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
 		glEnable(GL_LIGHT0);	
-		if (renderMaterial == METALLIC) {
-			// values for chrome (http://cs.anu.edu.au/~Hugh.Fisher/3dteach/ogl-lighting.html)
-			glMaterialf( GL_FRONT, GL_SHININESS, 0.6 * 128 );
-			const GLfloat ambient[4] = {0.25, 0.25, 0.25, 1.0 };
-		    const GLfloat specular[4] = { 0.774597, 0.774597, 0.774597, 1.0 };
-		    const GLfloat diffuse[4] = { 0.4, 0.4, 0.4, 1.0 };
-			// glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
-			glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-		} else if (renderMaterial == MATTE) {
-			glMaterialf( GL_FRONT, GL_SHININESS, 0 );
-			// const GLfloat ambient[4] = {0.19225, 0.19225, 0.19225, 1.0f};
-		    const GLfloat specular[4] = { 0.01, 0.01, 0.01, 1.0 };
-		    const GLfloat diffuse[4] = { 0.70, 0.70, 0.70, 1.0 };
-			// glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
-			glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
-			glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-		}
 	} else {
 		glDisable(GL_LIGHTING);
 	}
 
-
-
-	glShadeModel(GL_FLAT);
 	if (renderStyle == WIREFRAME) {
 		glLineWidth(1);
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
@@ -1029,6 +999,23 @@ void display(void)
 		drawPenguin();
 		outlining = false;
 		glDisable(GL_POLYGON_OFFSET_LINE);
+	} else if (renderStyle == MATTE) {
+		// values for chrome (http://devernay.free.fr/cours/opengl/materials.html)
+		glMaterialf( GL_FRONT, GL_SHININESS, 0.6 * 128 );
+		const GLfloat ambient[4] = {0.25, 0.25, 0.25, 1.0 };
+	    const GLfloat specular[4] = { 0.774597, 0.774597, 0.774597, 1.0 };
+	    const GLfloat diffuse[4] = { 0.4, 0.4, 0.4, 1.0 };
+		glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+	} else if (renderStyle == METALLIC) {
+		glMaterialf( GL_FRONT, GL_SHININESS, 0 );
+		const GLfloat ambient[4] = {0.25, 0.25, 0.25, 1.0 };
+	    const GLfloat specular[4] = { 0.1, 0.1, 0.1, 1.0 };
+	    const GLfloat diffuse[4] = { 0.70, 0.70, 0.70, 1.0 };
+	    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
+		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
 	}
 
 	// SAMPLE CODE **********
@@ -1063,19 +1050,25 @@ void drawPenguin() {
 		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z), 0, 0, 1);
 
 		COLOUR_CHANGE(BLUE)
+		// draw torso
 		drawTrapazoid(TORSO_HEIGHT, TORSO_UPPER_WIDTH, TORSO_LOWER_WIDTH, TORSO_UPPER_DEPTH, TORSO_LOWER_DEPTH);
 		COLOUR_CHANGE(WHITE)
+
+		// draw fins
 		drawFin(true);
 		drawFin(false);
 
-		// upper body
+		// upper body - head and beak
 		glPushMatrix();
 			glTranslatef(0, TORSO_HEIGHT / 2 + HEAD_HEIGHT / 2, 0); // move head up
 			glRotatef(joint_ui_data->getDOF(Keyframe::HEAD), 0, 1, 0); // rotate head
+			// draw head
 			COLOUR_CHANGE(GREY)
 			drawTrapazoid(HEAD_HEIGHT, HEAD_UPPER_WIDTH, HEAD_LOWER_WIDTH, HEAD_UPPER_DEPTH, HEAD_LOWER_DEPTH);
+			// draw beak - 2 parts (upper + lower)
 			COLOUR_CHANGE(ORANGE)
 			glPushMatrix();
+				// get how much the beak should be open
 				const float beak_slider_trans = (joint_ui_data->getDOF(Keyframe::BEAK) * BEAK_HEIGHT) / 2;
 				glTranslatef(- HEAD_LOWER_WIDTH / 2, BEAK_HEIGHT / 2, 0); // move beak up to head
 				glPushMatrix();
@@ -1151,8 +1144,11 @@ void drawFin(bool left) {
 	glPopMatrix();
 }
 
-// create a joint at x, y offset from the current location. 
-// the joint's rotation will be controlled by the variable argument
+// create a joint at x, y, z offset from the current location
+// specify the axes to be rotated along in a map<char, float>, example:
+// { 'x' : 37, 'y': 32 } would rotate along x by 37 and along y by 32. 
+// valid keys are 'x' 'y' and 'z'. Order will always be applied in xyz 
+// if a key is not present, no rotation occurs along its axis
 void jointAt(const float x, const float y, const float z, std::map<char, float> rotations) {
     // keep the current color so we can swap it back later
     float currentColor[4];
