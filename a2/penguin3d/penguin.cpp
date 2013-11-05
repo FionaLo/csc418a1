@@ -50,7 +50,7 @@
 #include "timer.h"
 #include "vector.h"
 
-
+// define some colors
 #define GREY 0.5, 0.5, 0.5
 #define ORANGE 1.0, 0.5, 0.0
 #define BLUE 0.0, 0.0, 1.0
@@ -98,14 +98,14 @@ const GLdouble FAR_CLIP    = 1000.0;
 // Render settings
 enum { WIREFRAME, SOLID, OUTLINED };	// README: the different render styles
 int renderStyle = WIREFRAME;			// README: the selected render style
-enum { MATTE, REGULAR, METALLIC };
-int renderMaterial = REGULAR;
-bool outlining = false; // am I currently outlining (used for colour changes)
+enum { MATTE, METALLIC };
+int renderMaterial = MATTE;
+bool outlining = false; // am I currently outlining (used to keep the lines black when drawing the outline, rather than changing color)
 enum { NO_LIGHTING, LIGHTING };
 int lightingMode = NO_LIGHTING;
-GLfloat light_color[4] = { 1, 1, 1, 0 };
-float light_angle_xy = 0;
-int colored_materials = 0;
+GLfloat light_color[4] = { 1, 1, 1, 0 }; // white light
+float light_angle_xy = 0; // the user controlled angle of the light
+int colored_materials = 0; // enable color when lighting is on
 
 // Animation settings
 int animate_mode = 0;			// 0 = no anim, 1 = animate
@@ -156,12 +156,13 @@ Keyframe* joint_ui_data;
 
 // README: To change the range of a particular DOF,
 // simply change the appropriate min/max values below
+// TODO: think seriously
 const float ROOT_TRANSLATE_X_MIN = -5.0;
 const float ROOT_TRANSLATE_X_MAX =  5.0;
 const float ROOT_TRANSLATE_Y_MIN = -5.0;
 const float ROOT_TRANSLATE_Y_MAX =  5.0;
 const float ROOT_TRANSLATE_Z_MIN = -100;
-const float ROOT_TRANSLATE_Z_MAX =  100;
+const float ROOT_TRANSLATE_Z_MAX =  abs(camZPos);
 const float ROOT_ROTATE_X_MIN    = -180.0;
 const float ROOT_ROTATE_X_MAX    =  180.0;
 const float ROOT_ROTATE_Y_MIN    = -180.0;
@@ -191,6 +192,7 @@ const float KNEE_MAX             = 75.0;
 
 
 /* Penguin Body Globals */
+// note: depth and width are as the penguin is pictured in the a2 handout
 const float TORSO_HEIGHT = 100;
 const float TORSO_UPPER_DEPTH = 0.3 * TORSO_HEIGHT;
 const float TORSO_LOWER_DEPTH = 1.5 * TORSO_UPPER_DEPTH;
@@ -214,7 +216,7 @@ const float LEG_LENGTH = TORSO_HEIGHT * 0.15;
 const float LEG_WIDTH = TORSO_LOWER_DEPTH * 0.1;
 
 const float FOOT_THICKNESS = TORSO_HEIGHT * 0.05;
-const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.6;
+const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.6; // 2d triangle height
 const float FOOT_WIDTH = TORSO_LOWER_WIDTH * 0.25;
 
 const float FIN_HEIGHT = TORSO_HEIGHT / 2;
@@ -222,21 +224,24 @@ const float FIN_UPPER_DEPTH = TORSO_LOWER_DEPTH * 0.2;
 const float FIN_LOWER_DEPTH = TORSO_UPPER_DEPTH * 0.2;
 const float FIN_LOWER_WIDTH = TORSO_UPPER_WIDTH / 3;
 const float FIN_UPPER_WIDTH = TORSO_LOWER_WIDTH / 3;
-const float FIN_Z_ROT = 15;
-const float FIN_X_ROT = 15;
 const float FIN_AVG_DEPTH = (FIN_LOWER_DEPTH + FIN_UPPER_DEPTH) / 2;
 
 const float LOWER_FIN_WIDTH = FIN_LOWER_WIDTH;
 const float LOWER_FIN_HEIGHT = FIN_HEIGHT * 0.3;
 const float LOWER_FIN_DEPTH = FIN_LOWER_DEPTH;
 
+// an estimate of the penguin's size
 const float PENGUIN_HEIGHT = TORSO_HEIGHT + LEG_LENGTH + HEAD_HEIGHT;
 
-// ***********  FUNCTION HEADER DECLARATIONS ****************
 
+// macros
 #define COLOUR_CHANGE(COLOR) if (!outlining) { glColor3f(COLOR); }
 #define DEG2RAD(val) (val / (180 / PI))
 #define RAD2DEG(val) (val * (180 / PI))
+
+
+// ***********  FUNCTION HEADER DECLARATIONS ****************
+
 
 // Initialization functions
 void initDS();
@@ -256,7 +261,7 @@ void motion(int x, int y);
 // Functions to help draw the object
 Vector getInterpolatedJointDOFS(float time);
 void drawCube();
-void drawTorso(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth);
+void drawTrapazoid(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth);
 void drawTriangle(const float thickness, const float width, const float height);
 void drawPenguin();
 void drawLeg(bool front);
@@ -282,8 +287,8 @@ int main(int argc, char** argv)
     if(argc != 3) {
         printf("Usage: demo [width] [height]\n");
         printf("Using 640x480 window by default...\n");
-        Win[0] = 1200;
-        Win[1] = 800;
+        Win[0] = 640;
+        Win[1] = 480;
     } else {
         Win[0] = atoi(argv[1]);
         Win[1] = atoi(argv[2]);
@@ -681,7 +686,7 @@ void initGlui()
 	//
 	// ***************************************************
 
-
+	// TODO: the keyframe enums, you have to add this
 	// Create GLUI window (keyframe controls) ************
 	//
 	glui_keyframe = GLUI_Master.create_glui("Keyframe Control", 0, 0, Win[1]+64);
@@ -959,8 +964,8 @@ void display(void)
 		float radius = PENGUIN_HEIGHT * 1.5;
 		float light_x = radius * cos(DEG2RAD(light_angle_xy));
 		float light_y = radius * sin(DEG2RAD(light_angle_xy));
-		GLfloat light_pos[] = { light_x, light_y, 0, 1 };
-		// mark the light's position - a tad confusing since it doesn't rotate with the penguin
+		GLfloat light_pos[] = { light_x, light_y, 0, 0 }; // directional light
+		// mark the light's position
 		glPushMatrix();
 			// note that since rotations are not commutative, this order matters!
 			glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_X), 1, 0, 0);
@@ -1058,7 +1063,7 @@ void drawPenguin() {
 		glRotatef(joint_ui_data->getDOF(Keyframe::ROOT_ROTATE_Z), 0, 0, 1);
 
 		COLOUR_CHANGE(BLUE)
-		drawTorso(TORSO_HEIGHT, TORSO_UPPER_WIDTH, TORSO_LOWER_WIDTH, TORSO_UPPER_DEPTH, TORSO_LOWER_DEPTH);
+		drawTrapazoid(TORSO_HEIGHT, TORSO_UPPER_WIDTH, TORSO_LOWER_WIDTH, TORSO_UPPER_DEPTH, TORSO_LOWER_DEPTH);
 		COLOUR_CHANGE(WHITE)
 		drawFin(true);
 		drawFin(false);
@@ -1068,19 +1073,19 @@ void drawPenguin() {
 			glTranslatef(0, TORSO_HEIGHT / 2 + HEAD_HEIGHT / 2, 0); // move head up
 			glRotatef(joint_ui_data->getDOF(Keyframe::HEAD), 0, 1, 0); // rotate head
 			COLOUR_CHANGE(GREY)
-			drawTorso(HEAD_HEIGHT, HEAD_UPPER_WIDTH, HEAD_LOWER_WIDTH, HEAD_UPPER_DEPTH, HEAD_LOWER_DEPTH);
+			drawTrapazoid(HEAD_HEIGHT, HEAD_UPPER_WIDTH, HEAD_LOWER_WIDTH, HEAD_UPPER_DEPTH, HEAD_LOWER_DEPTH);
 			COLOUR_CHANGE(ORANGE)
 			glPushMatrix();
 				const float beak_slider_trans = (joint_ui_data->getDOF(Keyframe::BEAK) * BEAK_HEIGHT) / 2;
 				glTranslatef(- HEAD_LOWER_WIDTH / 2, BEAK_HEIGHT / 2, 0); // move beak up to head
 				glPushMatrix();
 					glTranslatef(0, beak_slider_trans, 0); 
-					drawTorso(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
+					drawTrapazoid(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
 				glPopMatrix();
 				glPushMatrix();
 					glTranslatef(0, - BEAK_HEIGHT - beak_slider_trans, 0); // move beak up to head
 					glScalef(1, -1, 1);
-					drawTorso(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
+					drawTrapazoid(BEAK_HEIGHT, BEAK_UPPER_WIDTH, BEAK_LOWER_WIDTH, BEAK_UPPER_DEPTH, BEAK_LOWER_DEPTH);
 				glPopMatrix();
 			glPopMatrix();
 		glPopMatrix();
@@ -1133,7 +1138,7 @@ void drawFin(bool left) {
 		jointAt(0, FIN_HEIGHT / 2, 0, shoulder_rotations);
 		float angle = atan(((TORSO_LOWER_DEPTH - TORSO_UPPER_DEPTH) / 2) / TORSO_HEIGHT) * 180 / PI;
 		glRotatef(left ? -angle : angle, 1, 0, 0);
-		drawTorso(FIN_HEIGHT, FIN_UPPER_WIDTH, FIN_LOWER_WIDTH, FIN_UPPER_DEPTH, FIN_LOWER_DEPTH);
+		drawTrapazoid(FIN_HEIGHT, FIN_UPPER_WIDTH, FIN_LOWER_WIDTH, FIN_UPPER_DEPTH, FIN_LOWER_DEPTH);
 		glPushMatrix();
 			glTranslatef(- LOWER_FIN_WIDTH / 4, -FIN_HEIGHT / 2 - LOWER_FIN_HEIGHT / 4 , left ? FIN_LOWER_DEPTH / 2 : -FIN_LOWER_DEPTH / 2);
 			std::map<char, float> elbow_rotations;
@@ -1252,7 +1257,7 @@ void drawCube()
 }
 
 // depth and width are as pictured in orientation on a2 handout
-void drawTorso(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth)
+void drawTrapazoid(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth)
 {
 	const float h_upper_width = upper_width / 2;
 	const float h_upper_depth = upper_depth / 2;
@@ -1260,6 +1265,7 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 	const float h_lower_depth = lower_depth / 2;	
 	const float h_height = height / 2;
 	const float non_overlap_hwidth = h_lower_width - h_upper_width;
+	const float non_overlap_hdepth = h_lower_depth - h_upper_depth;
 	glBegin(GL_QUADS);
 
 		// draw top
@@ -1276,28 +1282,28 @@ void drawTorso(const float height, const float upper_width, const float lower_wi
 
 		// TODO: normals
 		// draw left side
-		glVertex3f(-h_lower_width, -h_height,  h_lower_depth);
-		glVertex3f(-h_lower_width, -h_height,  -h_lower_depth);
-		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
-		glVertex3f(-h_upper_width,  h_height,  h_upper_depth);
+		glNormal3f(-height, non_overlap_hwidth, 0); glVertex3f(-h_lower_width, -h_height,  h_lower_depth);
+		glNormal3f(-height, non_overlap_hwidth, 0); glVertex3f(-h_lower_width, -h_height,  -h_lower_depth);
+		glNormal3f(-height, non_overlap_hwidth, 0); glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
+		glNormal3f(-height, non_overlap_hwidth, 0); glVertex3f(-h_upper_width,  h_height,  h_upper_depth);
 
 		// draw right side
-		glVertex3f(h_lower_width, -h_height,  h_lower_depth);
-		glVertex3f(h_lower_width, -h_height,  -h_lower_depth);
-		glVertex3f(h_upper_width,  h_height, -h_upper_depth);
-		glVertex3f(h_upper_width,  h_height,  h_upper_depth);
+		glNormal3f(height, non_overlap_hwidth, 0); glVertex3f(h_lower_width, -h_height,  h_lower_depth);
+		glNormal3f(height, non_overlap_hwidth, 0); glVertex3f(h_lower_width, -h_height,  -h_lower_depth);
+		glNormal3f(height, non_overlap_hwidth, 0); glVertex3f(h_upper_width,  h_height, -h_upper_depth);
+		glNormal3f(height, non_overlap_hwidth, 0); glVertex3f(h_upper_width,  h_height,  h_upper_depth);
 
 		// draw front
-		glVertex3f(h_lower_width,  -h_height,  h_lower_depth);
-		glVertex3f(h_upper_width,  h_height,  h_upper_depth);
-		glVertex3f(-h_upper_width,  h_height, h_upper_depth);
-		glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
+		glNormal3f(0, non_overlap_hdepth, height); glVertex3f(h_lower_width,  -h_height,  h_lower_depth);
+		glNormal3f(0, non_overlap_hdepth, height); glVertex3f(h_upper_width,  h_height,  h_upper_depth);
+		glNormal3f(0, non_overlap_hdepth, height); glVertex3f(-h_upper_width,  h_height, h_upper_depth);
+		glNormal3f(0, non_overlap_hdepth, height); glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
 
 		// draw back
-		glVertex3f(h_lower_width,  -h_height,  -h_lower_depth);
-		glVertex3f(h_upper_width,  h_height,  -h_upper_depth);
-		glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
-		glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
+		glNormal3f(0, non_overlap_hdepth, -height); glVertex3f(h_lower_width,  -h_height,  -h_lower_depth);
+		glNormal3f(0, non_overlap_hdepth, -height); glVertex3f(h_upper_width,  h_height,  -h_upper_depth);
+		glNormal3f(0, non_overlap_hdepth, -height); glVertex3f(-h_upper_width,  h_height, -h_upper_depth);
+		glNormal3f(0, non_overlap_hdepth, -height); glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
 
 	glEnd();
 }
