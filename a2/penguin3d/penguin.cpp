@@ -96,13 +96,9 @@ const GLdouble NEAR_CLIP   = 0.1;
 const GLdouble FAR_CLIP    = 1000.0;
 
 // Render settings
-enum { WIREFRAME, SOLID, OUTLINED };	// README: the different render styles
+enum { WIREFRAME, SOLID, OUTLINED, MATTE, METALLIC };	// README: the different render styles
 int renderStyle = WIREFRAME;			// README: the selected render style
-enum { MATTE, METALLIC };
-int renderMaterial = MATTE;
 bool outlining = false; // am I currently outlining (used to keep the lines black when drawing the outline, rather than changing color)
-enum { NO_LIGHTING, LIGHTING };
-int lightingMode = NO_LIGHTING;
 GLfloat light_color[4] = { 1, 1, 1, 0 }; // white light
 int colored_materials = 0; // enable color when lighting is on
 
@@ -156,38 +152,38 @@ Keyframe* joint_ui_data;
 // README: To change the range of a particular DOF,
 // simply change the appropriate min/max values below
 // TODO: think seriously
-const float ROOT_TRANSLATE_X_MIN =  -5;
-const float ROOT_TRANSLATE_X_MAX =  5;
-const float ROOT_TRANSLATE_Y_MIN = -5.0;
-const float ROOT_TRANSLATE_Y_MAX =  5.0;
-const float ROOT_TRANSLATE_Z_MIN = -100;
-const float ROOT_TRANSLATE_Z_MAX =  abs(camZPos);
+const float ROOT_TRANSLATE_X_MIN =  -200;
+const float ROOT_TRANSLATE_X_MAX =  200;
+const float ROOT_TRANSLATE_Y_MIN = -100;
+const float ROOT_TRANSLATE_Y_MAX =  100;
+const float ROOT_TRANSLATE_Z_MIN = -200;
+const float ROOT_TRANSLATE_Z_MAX =  200;
 const float ROOT_ROTATE_X_MIN    = -180.0;
 const float ROOT_ROTATE_X_MAX    =  180.0;
 const float ROOT_ROTATE_Y_MIN    = -180.0;
 const float ROOT_ROTATE_Y_MAX    =  180.0;
 const float ROOT_ROTATE_Z_MIN    = -180.0;
 const float ROOT_ROTATE_Z_MAX    =  180.0;
-const float HEAD_MIN             = -180.0;
-const float HEAD_MAX             =  180.0;
+const float HEAD_MIN             = -30.0;
+const float HEAD_MAX             =  30.0;
 const float SHOULDER_PITCH_MIN   = -45.0;
 const float SHOULDER_PITCH_MAX   =  45.0;
-const float SHOULDER_YAW_MIN     = -45.0;
+const float SHOULDER_YAW_MIN     = -45.0; // TODO: verify
 const float SHOULDER_YAW_MAX     =  45.0;
-const float SHOULDER_ROLL_MIN    = -45.0;
+const float SHOULDER_ROLL_MIN    =  0;
 const float SHOULDER_ROLL_MAX    =  45.0;
-const float HIP_PITCH_MIN        = -45.0;
-const float HIP_PITCH_MAX        =  45.0;
-const float HIP_YAW_MIN          = -45.0;
+const float HIP_PITCH_MIN        = -30.0; 
+const float HIP_PITCH_MAX        =  30.0;
+const float HIP_YAW_MIN          = -45.0; // TODO: lower so feet don't collide
 const float HIP_YAW_MAX          =  45.0;
-const float HIP_ROLL_MIN         = -45.0;
+const float HIP_ROLL_MIN         = -45.0; // TODO: the legs can go into each other, is that a problem?
 const float HIP_ROLL_MAX         =  45.0;
 const float BEAK_MIN             =  0.0;
-const float BEAK_MAX             =  1.0;
-const float ELBOW_MIN            =  0.0;
+const float BEAK_MAX             =  0.7;
+const float ELBOW_MIN            =  0.0; // TODO: think
 const float ELBOW_MAX            = 75.0;
-const float KNEE_MIN             =  0.0;
-const float KNEE_MAX             = 75.0;
+const float KNEE_MIN             =  -45.0;
+const float KNEE_MAX             = 45.0;
 
 
 /* Penguin Body Globals */
@@ -739,14 +735,10 @@ void initGlui()
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Wireframe");
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Solid");
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Solid w/ outlines");
-
-	// Create control to specify the material style
-	glui_panel = glui_render->add_panel("Material Style");
-	glui_radio_group = glui_render->add_radiogroup_to_panel(glui_panel, &renderMaterial);
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Matte");
 	glui_render->add_radiobutton_to_group(glui_radio_group, "Metallic");
 
-	// Create control to specify the material style
+	// Create control to specify lighting info
 	glui_panel = glui_render->add_panel("Lighting");
 	glui_render->add_checkbox_to_panel(glui_panel, "Colored Materials", &colored_materials);
 
@@ -980,7 +972,6 @@ void display(void)
 	}
 
 	if (renderStyle == WIREFRAME) {
-		glLineWidth(1);
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		drawPenguin();
 	} else if (renderStyle == SOLID) { 
@@ -999,7 +990,9 @@ void display(void)
 		drawPenguin();
 		outlining = false;
 		glDisable(GL_POLYGON_OFFSET_LINE);
-	} else if (renderStyle == MATTE) {
+		glLineWidth(1);
+	} else if (renderStyle == METALLIC) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		// values for chrome (http://devernay.free.fr/cours/opengl/materials.html)
 		glMaterialf( GL_FRONT, GL_SHININESS, 0.6 * 128 );
 		const GLfloat ambient[4] = {0.25, 0.25, 0.25, 1.0 };
@@ -1008,7 +1001,9 @@ void display(void)
 		glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
-	} else if (renderStyle == METALLIC) {
+		drawPenguin();
+	} else if (renderStyle == MATTE) {
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glMaterialf( GL_FRONT, GL_SHININESS, 0 );
 		const GLfloat ambient[4] = {0.25, 0.25, 0.25, 1.0 };
 	    const GLfloat specular[4] = { 0.1, 0.1, 0.1, 1.0 };
@@ -1016,6 +1011,7 @@ void display(void)
 	    glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
 		glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
 		glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
+		drawPenguin();
 	}
 
 	// SAMPLE CODE **********
@@ -1126,6 +1122,9 @@ void drawFin(bool left) {
 		glRotatef(-15, 0, 0, 1);
 		std::map<char, float> shoulder_rotations;
 		shoulder_rotations['x'] = joint_ui_data->getDOF(left ? Keyframe::L_SHOULDER_ROLL : Keyframe::R_SHOULDER_ROLL);
+		if (left) { 
+			shoulder_rotations['x'] = -shoulder_rotations['x']; // prevent the arms from going inside the body
+		}
 		shoulder_rotations['y'] = joint_ui_data->getDOF(left ? Keyframe::L_SHOULDER_YAW : Keyframe::R_SHOULDER_YAW);
 		shoulder_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_SHOULDER_PITCH : Keyframe::R_SHOULDER_PITCH);
 		jointAt(0, FIN_HEIGHT / 2, 0, shoulder_rotations);
@@ -1136,7 +1135,7 @@ void drawFin(bool left) {
 			glTranslatef(- LOWER_FIN_WIDTH / 4, -FIN_HEIGHT / 2 - LOWER_FIN_HEIGHT / 4 , left ? FIN_LOWER_DEPTH / 2 : -FIN_LOWER_DEPTH / 2);
 			std::map<char, float> elbow_rotations;
 			elbow_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_ELBOW : Keyframe::R_ELBOW);
-			jointAt(0, 0, 0, elbow_rotations);
+			jointAt(0, 0, 0, elbow_rotations); // TODO: move this
 			glScalef(LOWER_FIN_WIDTH / 2, LOWER_FIN_HEIGHT / 2, FIN_AVG_DEPTH / 2);
 			glRotatef(60, 0, 0, 1);
 			drawCube();
@@ -1304,7 +1303,7 @@ void drawTrapazoid(const float height, const float upper_width, const float lowe
 	glEnd();
 }
 
-// isocelles
+// Draw an isocelles triangle. Note that height and width refer to properties of the 2D triangle.
 void drawTriangle(const float thickness, const float width, const float height) {
 	const float h_thickness = thickness / 2;
 	const float h_width = width / 2;
