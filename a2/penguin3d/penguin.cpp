@@ -209,7 +209,7 @@ const float LEG_LENGTH = TORSO_HEIGHT * 0.15;
 const float LEG_WIDTH = TORSO_LOWER_DEPTH * 0.1;
 
 const float FOOT_THICKNESS = TORSO_HEIGHT * 0.05;
-const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.6; // 2d triangle height
+const float FOOT_HEIGHT = TORSO_LOWER_DEPTH * 0.6; 
 const float FOOT_WIDTH = TORSO_LOWER_WIDTH * 0.25;
 
 const float FIN_HEIGHT = TORSO_HEIGHT / 2;
@@ -991,8 +991,8 @@ void display(void)
 		glLineWidth(1);
 	} else if (renderStyle == METALLIC) {
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		// values for chrome (http://devernay.free.fr/cours/opengl/materials.html)
-		glMaterialf( GL_FRONT, GL_SHININESS, 0.6 * 128 );
+		// values tweaked from values for chrome (http://devernay.free.fr/cours/opengl/materials.html)
+		glMaterialf( GL_FRONT, GL_SHININESS, 0.8 * 128 );
 		const GLfloat ambient[4] = {0.25, 0.25, 0.25, 1.0 };
 	    const GLfloat specular[4] = { 0.774597, 0.774597, 0.774597, 1.0 };
 	    const GLfloat diffuse[4] = { 0.4, 0.4, 0.4, 1.0 };
