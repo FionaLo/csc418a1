@@ -99,7 +99,6 @@ const GLdouble FAR_CLIP    = 1000.0;
 enum { WIREFRAME, SOLID, OUTLINED, MATTE, METALLIC };	// README: the different render styles
 int renderStyle = WIREFRAME;			// README: the selected render style
 bool outlining = false; // am I currently outlining (used to keep the lines black when drawing the outline, rather than changing color)
-GLfloat light_color[4] = { 1, 1, 1, 0 }; // white light
 int colored_materials = 0; // enable color when lighting is on
 
 // Animation settings
@@ -151,7 +150,6 @@ Keyframe* joint_ui_data;
 
 // README: To change the range of a particular DOF,
 // simply change the appropriate min/max values below
-// TODO: think seriously
 const float ROOT_TRANSLATE_X_MIN =  -200;
 const float ROOT_TRANSLATE_X_MAX =  200;
 const float ROOT_TRANSLATE_Y_MIN = -100;
@@ -168,20 +166,20 @@ const float HEAD_MIN             = -30.0;
 const float HEAD_MAX             =  30.0;
 const float SHOULDER_PITCH_MIN   = -45.0;
 const float SHOULDER_PITCH_MAX   =  45.0;
-const float SHOULDER_YAW_MIN     = -45.0; // TODO: verify
-const float SHOULDER_YAW_MAX     =  45.0;
+const float SHOULDER_YAW_MIN     = -15.0; 
+const float SHOULDER_YAW_MAX     =  15.0;
 const float SHOULDER_ROLL_MIN    =  0;
 const float SHOULDER_ROLL_MAX    =  45.0;
 const float HIP_PITCH_MIN        = -30.0; 
 const float HIP_PITCH_MAX        =  30.0;
-const float HIP_YAW_MIN          = -45.0; // TODO: lower so feet don't collide
+const float HIP_YAW_MIN          = -45.0; 
 const float HIP_YAW_MAX          =  45.0;
-const float HIP_ROLL_MIN         = -45.0; // TODO: the legs can go into each other, is that a problem?
+const float HIP_ROLL_MIN         = -45.0; 
 const float HIP_ROLL_MAX         =  45.0;
 const float BEAK_MIN             =  0.0;
 const float BEAK_MAX             =  0.7;
-const float ELBOW_MIN            =  0.0; // TODO: think
-const float ELBOW_MAX            = 75.0;
+const float ELBOW_MIN            =  -45.0; 
+const float ELBOW_MAX            = 0;
 const float KNEE_MIN             =  -45.0;
 const float KNEE_MAX             = 45.0;
 
@@ -681,7 +679,6 @@ void initGlui()
 	//
 	// ***************************************************
 
-	// TODO: the keyframe enums, you have to add this
 	// Create GLUI window (keyframe controls) ************
 	//
 	glui_keyframe = GLUI_Master.create_glui("Keyframe Control", 0, 0, Win[1]+64);
@@ -939,6 +936,7 @@ void display(void)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_NORMALIZE);
 	glShadeModel(GL_SMOOTH);
+	// lighting config
 	if (renderStyle == MATTE || renderStyle == METALLIC) {
 
 		if (colored_materials) {
@@ -1127,7 +1125,7 @@ void drawFin(bool left) {
 		}
 		shoulder_rotations['y'] = joint_ui_data->getDOF(left ? Keyframe::L_SHOULDER_YAW : Keyframe::R_SHOULDER_YAW);
 		shoulder_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_SHOULDER_PITCH : Keyframe::R_SHOULDER_PITCH);
-		jointAt(0, FIN_HEIGHT / 2, 0, shoulder_rotations);
+		jointAt(0, FIN_HEIGHT / 2, left ? -FIN_UPPER_DEPTH / 2 : FIN_UPPER_DEPTH / 2, shoulder_rotations); 
 		float angle = atan(((TORSO_LOWER_DEPTH - TORSO_UPPER_DEPTH) / 2) / TORSO_HEIGHT) * 180 / PI;
 		glRotatef(left ? -angle : angle, 1, 0, 0);
 		drawTrapazoid(FIN_HEIGHT, FIN_UPPER_WIDTH, FIN_LOWER_WIDTH, FIN_UPPER_DEPTH, FIN_LOWER_DEPTH);
@@ -1135,7 +1133,7 @@ void drawFin(bool left) {
 			glTranslatef(- LOWER_FIN_WIDTH / 4, -FIN_HEIGHT / 2 - LOWER_FIN_HEIGHT / 4 , left ? FIN_LOWER_DEPTH / 2 : -FIN_LOWER_DEPTH / 2);
 			std::map<char, float> elbow_rotations;
 			elbow_rotations['z'] = joint_ui_data->getDOF(left ? Keyframe::L_ELBOW : Keyframe::R_ELBOW);
-			jointAt(0, 0, 0, elbow_rotations); // TODO: move this
+			jointAt(0, LOWER_FIN_HEIGHT / 2, 0, elbow_rotations); 
 			glScalef(LOWER_FIN_WIDTH / 2, LOWER_FIN_HEIGHT / 2, FIN_AVG_DEPTH / 2);
 			glRotatef(60, 0, 0, 1);
 			drawCube();
@@ -1251,7 +1249,8 @@ void drawCube()
 	glEnd();
 }
 
-// depth and width are as pictured in orientation on a2 handout
+// draw a 3d trapazoid. 
+// depth, width, and height are as pictured in orientation on a2 handout
 void drawTrapazoid(const float height, const float upper_width, const float lower_width, const float upper_depth, const float lower_depth)
 {
 	const float h_upper_width = upper_width / 2;
@@ -1275,7 +1274,6 @@ void drawTrapazoid(const float height, const float upper_width, const float lowe
 		glNormal3f(0, -1, 0); glVertex3f(-h_lower_width,  -h_height, -h_lower_depth);
 		glNormal3f(0, -1, 0); glVertex3f(-h_lower_width,  -h_height, h_lower_depth);
 
-		// TODO: normals
 		// draw left side
 		glNormal3f(-height, non_overlap_hwidth, 0); glVertex3f(-h_lower_width, -h_height,  h_lower_depth);
 		glNormal3f(-height, non_overlap_hwidth, 0); glVertex3f(-h_lower_width, -h_height,  -h_lower_depth);
