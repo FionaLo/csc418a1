@@ -1325,22 +1325,20 @@ void drawTriangle(const float thickness, const float width, const float height) 
 	glEnd();
 	glBegin(GL_QUADS);
 
-		// TODO: normals
-		glVertex3f(0,  h_thickness,  -h_height);
-		glVertex3f(0,  -h_thickness,  -h_height);
-		glVertex3f(h_width,  -h_thickness,  h_height);
-		glVertex3f(h_width,  h_thickness,  h_height);
+		glNormal3f(height, 0, -h_width); glVertex3f(0,  h_thickness,  -h_height);
+		glNormal3f(height, 0, -h_width); glVertex3f(0,  -h_thickness,  -h_height);
+		glNormal3f(height, 0, -h_width); glVertex3f(h_width,  -h_thickness,  h_height);
+		glNormal3f(height, 0, -h_width); glVertex3f(h_width,  h_thickness,  h_height);
 
 		glNormal3f(0, 0, 1); glVertex3f(h_width,  -h_thickness,  h_height);
 		glNormal3f(0, 0, 1); glVertex3f(h_width,  h_thickness,  h_height);
 		glNormal3f(0, 0, 1); glVertex3f(-h_width,  h_thickness,  h_height);
 		glNormal3f(0, 0, 1); glVertex3f(-h_width,  -h_thickness,  h_height);
 
-		// TODO: normals
-		glVertex3f(-h_width,  h_thickness,  h_height);
-		glVertex3f(-h_width,  -h_thickness,  h_height);
-		glVertex3f(0,  -h_thickness,  -h_height);
-		glVertex3f(0,  h_thickness,  -h_height);
+		glNormal3f(-height, 0, -h_width); glVertex3f(-h_width,  h_thickness,  h_height);
+		glNormal3f(-height, 0, -h_width); glVertex3f(-h_width,  -h_thickness,  h_height);
+		glNormal3f(-height, 0, -h_width); glVertex3f(0,  -h_thickness,  -h_height);
+		glNormal3f(-height, 0, -h_width); glVertex3f(0,  h_thickness,  -h_height);
 
 
 	glEnd();
