@@ -12,4 +12,10 @@
 *.la
 *.a
 
+# Generated bmp
+*.bmp
+
+# Raytracer
+raytracer
+
 penguin
