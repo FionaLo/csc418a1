@@ -11,6 +11,8 @@
 #include <cmath>
 #include "light_source.h"
 
+RenderType LightSource::RENDER_TYPE = SCENE_SIGNATURE;
+
 void PointLight::shade( Ray3D& ray ) {
 	// TODO: implement this function to fill in values for ray.col 
 	// using phong shading.  Make sure your vectors are normalized, and
@@ -19,6 +21,10 @@ void PointLight::shade( Ray3D& ray ) {
 	// It is assumed at this point that the intersection information in ray 
 	// is available.  So be sure that traverseScene() is called on the ray 
 	// before this function.  
-
+	if (LightSource::RENDER_TYPE == SCENE_SIGNATURE) {
+			ray.col = ray.intersection.mat->diffuse;
+		} else {
+			// TODO:
+	}
 }
 
