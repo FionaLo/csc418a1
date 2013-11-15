@@ -183,7 +183,9 @@ void Raytracer::traverseScene( SceneDagNode* node, Ray3D& ray ) {
 void Raytracer::computeShading( Ray3D& ray ) {
 	LightListNode* curLight = _lightSource;
 	for (;;) {
-		if (curLight == NULL) break;
+		if (curLight == NULL) {
+			break;
+		}
 		// Each lightSource provides its own shading function.
 
 		// Implement shadows here if needed.
@@ -254,10 +256,10 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view,
 
 			// TODO: Convert ray to world space and call 
 			// shadeRay(ray) to generate pixel colour. 	
+			Ray3D rayViewSpace(origin, imagePlane - origin);
+			Ray3D rayWorldSpace(viewToWorld * rayViewSpace.origin, viewToWorld * rayViewSpace.dir);
 			
-			Ray3D ray;
-
-			Colour col = shadeRay(ray); 
+			Colour col = shadeRay(rayWorldSpace); 
 
 			_rbuffer[i*width+j] = int(col[0]*255);
 			_gbuffer[i*width+j] = int(col[1]*255);
@@ -320,12 +322,12 @@ int main(int argc, char* argv[])
 
 	// Render the scene, feel free to make the image smaller for
 	// testing purposes.	
-	raytracer.render(width, height, eye, view, up, fov, "view1.bmp");
+	raytracer.render(width, height, eye, view, up, fov, (char*) "view1.bmp");
 	
 	// Render it from a different point of view.
 	Point3D eye2(4, 2, 1);
 	Vector3D view2(-4, -2, -6);
-	raytracer.render(width, height, eye2, view2, up, fov, "view2.bmp");
+	raytracer.render(width, height, eye2, view2, up, fov, (char*) "view2.bmp");
 	
 	return 0;
 }

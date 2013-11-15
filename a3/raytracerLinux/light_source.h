@@ -10,6 +10,12 @@
 
 #include "util.h"
 
+enum RenderType { 
+	SCENE_SIGNATURE,
+	DIFFUSE_AMBIENT,
+	PHONG
+};
+
 // Base class for a light source.  You could define different types
 // of lights here, but point light is sufficient for most scenes you
 // might want to render.  Different light sources shade the ray 
@@ -18,6 +24,7 @@ class LightSource {
 public:
 	virtual void shade( Ray3D& ) = 0;
 	virtual Point3D get_position() const = 0; 
+	static RenderType RENDER_TYPE;
 };
 
 // A point light is defined by its position in world space and its
