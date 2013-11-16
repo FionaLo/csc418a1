@@ -160,7 +160,8 @@ struct Intersection {
 };
 
 // Ray structure. 
-struct Ray3D {
+class Ray3D {
+public:
 	Ray3D() {
 		intersection.none = true; 
 	}
@@ -176,6 +177,7 @@ struct Ray3D {
 	// Current colour of the ray, should be computed by the shading
 	// function.
 	Colour col;
+	Point3D point_at(double t_value);
 };
 #endif
 

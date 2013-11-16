@@ -389,3 +389,6 @@ std::ostream& operator <<(std::ostream& os, const Matrix4x4& M) {
 
 
 
+Point3D Ray3D::point_at(double t_value) {
+	return origin + t_value * dir;
+}

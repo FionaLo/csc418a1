@@ -25,25 +25,46 @@ bool UnitSquare::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 	//
 	// HINT: Remember to first transform the ray into object space  
 	// to simplify the intersection test.
+
 	bool intersection_occured = true;
+	bool intersection_overwrite = false;
+
 	Ray3D rayModelSpace = Ray3D(worldToModel * ray.origin, worldToModel * ray.dir);
+
 	double t_value = - (rayModelSpace.origin[2] / rayModelSpace.dir[2]);
-	double x_val = rayModelSpace.origin[0] + t_value * rayModelSpace.dir[0];
-	double y_val = rayModelSpace.origin[1] + t_value * rayModelSpace.dir[1];
-	if (t_value <= 0 || x_val < -0.5 || x_val > 0.5 || y_val < -0.5 || y_val > 0.5) {
+
+	Point3D intersectionPoint = rayModelSpace.point_at(t_value);
+
+	if (t_value <= 0 || 
+		intersectionPoint[0] < -0.5 || intersectionPoint[0] > 0.5 || 
+		intersectionPoint[1] < -0.5 || intersectionPoint[1] > 0.5) {
 		intersection_occured = false;
 	}
+
 	if (intersection_occured && (ray.intersection.none || t_value < ray.intersection.t_value)) {
+		intersection_overwrite = true;
 		Intersection intersection;
 		intersection.normal = modelToWorld.transpose() * Vector3D(0, 0, 1);
-		intersection.point = modelToWorld * Point3D(x_val, y_val, 0);
+		intersection.point = modelToWorld * intersectionPoint;
 		intersection.t_value = t_value;
 		intersection.none = false;
 		ray.intersection = intersection;
 	}
 	
-	return intersection_occured;
+	return intersection_occured && intersection_overwrite;
 }
+
+static double discriminant(double a, double b, double c) {
+	return (b * b) - (4 * a * c);
+}
+
+static void quadSolve(double a, double b, double c, double &root1, double &root2) {
+	double term1 = -b;
+	double term2 = sqrt(discriminant(a, b, c));
+	root1 = (term1 + term2) / (2 * a);
+	root2 = (term1 - term2) / (2 * a);
+}
+
 
 bool UnitSphere::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 		const Matrix4x4& modelToWorld ) {
@@ -56,64 +77,48 @@ bool UnitSphere::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 	//
 	// HINT: Remember to first transform the ray into object space  
 	// to simplify the intersection test.
+
+	// uses logic based on http://www.csee.umbc.edu/~olano/435f02/ray-sphere.html
 	bool intersection_occured = false;
-    bool xy_flag;
-    bool yz_flag;
-    bool zx_flag;
-    double x_val, y_val, z_val;
-    double xt_value, yt_value, zt_value;
+	bool intersection_overwrite = false;
+
+	double t_value;
 	Ray3D rayModelSpace = Ray3D(worldToModel * ray.origin, worldToModel * ray.dir);
+	Vector3D rayOriginModelVector = rayModelSpace.origin - Point3D(0, 0, 0); // convert point to vector for dot product purposes
 
-	zt_value = - (rayModelSpace.origin[2] / rayModelSpace.dir[2]);
-	x_val = rayModelSpace.origin[0] + t_value * rayModelSpace.dir[0];
-	y_val = rayModelSpace.origin[1] + t_value * rayModelSpace.dir[1];
-
-	if (t_value > 0 && sqrt( x_val * x_val + y_val * y_val) <= 1) {
-		intersection_occured = true;
-        xy_flag = true;
-	}
-
-	xt_value = - (rayModelSpace.origin[0] / rayModelSpace.dir[0]);
-	y_val = rayModelSpace.origin[1] + t_value * rayModelSpace.dir[1];
-	z_val = rayModelSpace.origin[2] + t_value * rayModelSpace.dir[2];
-
-	if (t_value > 0 && sqrt( y_val * y_val + z_val * z_val) <= 1) {
-		intersection_occured = true;
-        yz_flag = true;
-	}
-
-	yt_value = - (rayModelSpace.origin[1] / rayModelSpace.dir[1]);
-	x_val = rayModelSpace.origin[0] + t_value * rayModelSpace.dir[0];
-	z_val = rayModelSpace.origin[2] + t_value * rayModelSpace.dir[2];
-
-	if (t_value > 0 && sqrt( x_val * x_val + z_val * z_val) <= 1) {
-		intersection_occured = true;
-        zx_flag = true;
-	}
-
-    if (xy_flag) {
-        z_val = sqrt(1 - x_val * x_val - y_val * y_val);
-        t_value = zt_value;
-    } else if (yz_flag) {
-        x_val = sqrt(1 - z_val * z_val - y_val * y_val);
-        t_value = xt_value;
-    } else if (zx_flag) { 
-        y_val = sqrt(1 - z_val * z_val - x_val * x_val);
-        t_value = yt_value;
-    }
-
+	/*
+	 * A point on a unit sphere is given by the equation x^2 + y^2 +z^2 = r^2, or in vector form: p dot p = r^2
+	 * A point on our ray is given by pO + td 
+	 * Substituting, we get a quadratic equation in t
+	*/
+	double a = rayModelSpace.dir.dot(rayModelSpace.dir);
+	double b = 2 * rayModelSpace.dir.dot(rayOriginModelVector);
+	double c = rayOriginModelVector.dot(rayOriginModelVector) - 1;
+	
+	double discriminant_val = discriminant(a, b, c);
+	if (discriminant_val >= 0) { // real roots -> intersection
+		double root1, root2;
+		quadSolve(a, b, c, root1, root2);
+		// we want the smallest t value that is greater than 0
+		if (root1 > 0 && root2 > 0 && root1 < root2) {
+			t_value = root1;
+			intersection_occured = true;
+		} else if (root2 > 0) {
+			t_value = root2;
+			intersection_occured = true;
+		}
+	} 
 
 	if (intersection_occured && (ray.intersection.none || t_value < ray.intersection.t_value)) {
+		intersection_overwrite = true;
 		Intersection intersection;
-		intersection.normal = modelToWorld.transpose() * Vector3D(0, 0, 1);
-		intersection.point = modelToWorld * Point3D(x_val, y_val, 0);
+		Point3D intersectionPointModelSpace = rayModelSpace.point_at(t_value);
+		intersection.point = modelToWorld * intersectionPointModelSpace;
+		intersection.normal = modelToWorld.transpose() * Vector3D(intersectionPointModelSpace[0], intersectionPointModelSpace[1], intersectionPointModelSpace[2]);
 		intersection.t_value = t_value;
 		intersection.none = false;
 		ray.intersection = intersection;
 	}
 
-
-
-	
-	return false;
+	return intersection_occured && intersection_overwrite;
 }
