@@ -44,7 +44,7 @@ bool UnitSquare::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 	if (intersection_occured && (ray.intersection.none || t_value < ray.intersection.t_value)) {
 		intersection_overwrite = true;
 		Intersection intersection;
-		intersection.normal = modelToWorld.transpose() * Vector3D(0, 0, 1);
+		intersection.normal = worldToModel.transpose() * Vector3D(0, 0, 1);
 		intersection.point = modelToWorld * intersectionPoint;
 		intersection.t_value = t_value;
 		intersection.none = false;
@@ -106,6 +106,9 @@ bool UnitSphere::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 		} else if (root2 > 0) {
 			t_value = root2;
 			intersection_occured = true;
+		} else if (root1 > 0) {
+			t_value = root1;
+			intersection_occured = true;
 		}
 	} 
 
@@ -114,7 +117,7 @@ bool UnitSphere::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 		Intersection intersection;
 		Point3D intersectionPointModelSpace = rayModelSpace.point_at(t_value);
 		intersection.point = modelToWorld * intersectionPointModelSpace;
-		intersection.normal = modelToWorld.transpose() * Vector3D(intersectionPointModelSpace[0], intersectionPointModelSpace[1], intersectionPointModelSpace[2]);
+		intersection.normal = worldToModel.transpose() * Vector3D(intersectionPointModelSpace[0], intersectionPointModelSpace[1], intersectionPointModelSpace[2]);
 		intersection.t_value = t_value;
 		intersection.none = false;
 		ray.intersection = intersection;
