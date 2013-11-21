@@ -12,13 +12,14 @@
 #include "light_source.h"
 
 //RenderType LightSource::RENDER_TYPE = SCENE_SIGNATURE;
-//RenderType LightSource::RENDER_TYPE = DIFFUSE_AMBIENT; 
+// RenderType LightSource::RENDER_TYPE = DIFFUSE_AMBIENT; 
 RenderType LightSource::RENDER_TYPE = PHONG; 
 
 
 double dmax(double a, double b) {
     return a < b ? b : a;
 }
+
 
 void PointLight::shade( Ray3D& ray ) {
 	// TODO: implement this function to fill in values for ray.col 
@@ -32,32 +33,40 @@ void PointLight::shade( Ray3D& ray ) {
     // TODO:
 	
     Vector3D normal_vector = ray.intersection.normal;
-    Vector3D light_vector = _pos - ray.intersection.point;
-    double ldotn = light_vector.dot(normal_vector);
-    Vector3D reflect_vector = 2 * ldotn * normal_vector - light_vector;
-    Vector3D view_vector = -ray.dir;
-
     normal_vector.normalize();
+
+    Vector3D light_vector = _pos - ray.intersection.point;
     light_vector.normalize();
+
+    double ldotn = light_vector.dot(normal_vector);
+
+    Vector3D reflect_vector = (2 * ldotn * normal_vector) - light_vector;
     reflect_vector.normalize();
+
+    Vector3D view_vector = -ray.dir;
     view_vector.normalize();
+
+    Material *material = ray.intersection.mat;
 
     Colour col;
     switch(LightSource::RENDER_TYPE) {
         case SCENE_SIGNATURE:
-            col = ray.intersection.mat->diffuse;
+            col = material->diffuse;
         break;
         case DIFFUSE_AMBIENT:
-            col = ray.intersection.mat->ambient * _col_ambient + 
-                  dmax(0,normal_vector.dot(light_vector)) * ray.intersection.mat->diffuse * _col_diffuse;
+            col = material->ambient * _col_ambient + 
+                  dmax(0, ldotn) * material->diffuse * _col_diffuse;
         break;
         case PHONG:
-            col = ray.intersection.mat->ambient * _col_ambient + 
-                  dmax(0, normal_vector.dot(light_vector)) * ray.intersection.mat->diffuse * _col_diffuse +
-                  dmax(0, pow(view_vector.dot(reflect_vector),ray.intersection.mat->specular_exp)) * ray.intersection.mat->specular * _col_specular;
+            {
+            double vdotr = view_vector.dot(reflect_vector);
+            col = material->ambient * _col_ambient + 
+                  dmax(0, ldotn) * material->diffuse * _col_diffuse +
+                  dmax(0, pow(vdotr, material->specular_exp)) * material->specular * _col_specular;
+            }
         break;
         default:
-            throw 1;
+            throw "Invalid render type";
     }
     col.clamp();
     ray.col = ray.col + col;
