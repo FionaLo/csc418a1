@@ -36,6 +36,18 @@ Point3D& Point3D::operator =(const Point3D& other) {
 	return *this;
 }
 
+// double equality fudge factor ftw
+bool isSameDouble(double dFirstVal, double dSecondVal) {
+    return std::fabs(dFirstVal - dSecondVal) < 1E-3;
+}
+
+bool Point3D::operator ==(const Point3D& other) {
+	return 	isSameDouble(m_data[0], other.m_data[0]) &&
+	isSameDouble(m_data[1], other.m_data[1]) &&
+	isSameDouble(m_data[2], other.m_data[2]);
+}
+
+
 double& Point3D::operator[](int i) {
 	return m_data[i];
 }

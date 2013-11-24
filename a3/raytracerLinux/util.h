@@ -27,6 +27,7 @@ public:
 	Point3D(const Point3D& other); 
 
 	Point3D& operator =(const Point3D& other); 
+	bool operator ==(const Point3D& other);
 	double& operator[](int i); 
 	double operator[](int i) const; 
 

@@ -17,6 +17,8 @@
 #include <iostream>
 #include <cstdlib>
 
+using namespace std;
+
 Raytracer::Raytracer() : _lightSource(NULL) {
 	_root = new SceneDagNode();
 }
@@ -187,10 +189,19 @@ void Raytracer::computeShading( Ray3D& ray ) {
 			break;
 		}
 		// Each lightSource provides its own shading function.
+		LightSource* lightSource = curLight->light;
 
 		// Implement shadows here if needed.
+    	Vector3D lightToObject = ray.intersection.point - lightSource->get_position();
+    	Ray3D rayLightToObjectWorldSpace = Ray3D(lightSource->get_position(), lightToObject);
+    	traverseScene(_root, rayLightToObjectWorldSpace);
 
-		curLight->light->shade(ray);
+
+    	if (rayLightToObjectWorldSpace.intersection.point == ray.intersection.point) {
+			_lightSource->shade(ray);
+    	}
+
+
 		curLight = curLight->next;
 	}
 }
