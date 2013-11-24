@@ -70,5 +70,6 @@ void PointLight::shade( Ray3D& ray ) {
     }
     col.clamp();
     ray.col = ray.col + col;
+    ray.col.clamp();
 }
 

@@ -18,6 +18,7 @@
 #include <cstdlib>
 
 using namespace std;
+#define SHADE_DEPTH 10
 
 Raytracer::Raytracer() : _lightSource(NULL) {
 	_root = new SceneDagNode();
@@ -193,12 +194,13 @@ void Raytracer::computeShading( Ray3D& ray ) {
 
 		// Implement shadows here if needed.
     	Vector3D lightToObject = ray.intersection.point - lightSource->get_position();
+    	lightToObject.normalize();
     	Ray3D rayLightToObjectWorldSpace = Ray3D(lightSource->get_position(), lightToObject);
     	traverseScene(_root, rayLightToObjectWorldSpace);
 
 
     	if (rayLightToObjectWorldSpace.intersection.point == ray.intersection.point) {
-			_lightSource->shade(ray);
+			lightSource->shade(ray);
     	}
 
 
@@ -227,20 +229,44 @@ void Raytracer::flushPixelBuffer( char *file_name ) {
 	delete _bbuffer;
 }
 
-Colour Raytracer::shadeRay( Ray3D& ray ) {
+Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 	Colour col(0.0, 0.0, 0.0); 
+
+	if (depth <= 0) {
+		return col;
+	}
+
 	traverseScene(_root, ray); 
 	
 	// Don't bother shading if the ray didn't hit 
 	// anything.
 	if (!ray.intersection.none) {
 		computeShading(ray); 
-		col = ray.col;  
+		col = ray.col;
+		
+		if (true) {
+			Vector3D oppositeRayDir = -ray.dir;
+			oppositeRayDir.normalize();
+			Vector3D normal = ray.intersection.normal;
+			normal.normalize();
+
+			Vector3D reflectionDirection = 2 * (oppositeRayDir.dot(normal)) * normal - oppositeRayDir;
+			reflectionDirection.normalize();
+			Ray3D reflectionRay = Ray3D(ray.intersection.point + 0.001 * reflectionDirection, reflectionDirection);
+			Colour reflectionColour = shadeRay(reflectionRay, depth - 1);
+
+			Vector3D distanceVector = ray.intersection.point - reflectionRay.intersection.point;
+			double distance = distanceVector.length();
+			double dampingFactor = 1.0 / pow(distance, 2.0);
+			// dampingFactor = 1;
+			col = col +  dampingFactor * reflectionColour * ray.intersection.mat->specular;
+		}
+
 	}
 
 	// You'll want to call shadeRay recursively (with a different ray, 
 	// of course) here to implement reflection/refraction effects.  
-
+	col.clamp();
 	return col; 
 }	
 
@@ -270,7 +296,7 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view,
 			Ray3D rayViewSpace(origin, imagePlane - origin);
 			Ray3D rayWorldSpace(viewToWorld * rayViewSpace.origin, viewToWorld * rayViewSpace.dir);
 			
-			Colour col = shadeRay(rayWorldSpace); 
+			Colour col = shadeRay(rayWorldSpace, SHADE_DEPTH); 
 
 			_rbuffer[i*width+j] = int(col[0]*255);
 			_gbuffer[i*width+j] = int(col[1]*255);
@@ -310,6 +336,14 @@ int main(int argc, char* argv[])
 	Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
 			Colour(0.316228, 0.316228, 0.316228), 
 			12.8 );
+	// Material shiny( Colour(0, 0, 0), Colour(0.54, 0.0, 0.63), 
+	Material shiny( Colour(0, 0, 0), Colour(0.54, 0.0, 0.63),
+			Colour(0.0, 0.0, 0.0), 
+			30.0 );
+	Material highSphere( Colour(0, 0, 0), Colour(0.7, 0.05, 0.05), 
+			Colour(0.916228, 0.616228, 0.516228), 
+			45.0 );
+
 
 	// Defines a point light source.
 	raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
@@ -317,15 +351,26 @@ int main(int argc, char* argv[])
 
 	// Add a unit square into the scene with material mat.
 	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
+	SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &shiny );
+	SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &highSphere );
+
 	SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
 	
 	// Apply some transformations to the unit square.
 	double factor1[3] = { 1.0, 2.0, 1.0 };
 	double factor2[3] = { 6.0, 6.0, 6.0 };
+	double factor3[3] = { 0.4, 0.4, 0.4 };
 	raytracer.translate(sphere, Vector3D(0, 0, -5));	
 	raytracer.rotate(sphere, 'x', -45); 
 	raytracer.rotate(sphere, 'z', 45); 
 	raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
+
+	raytracer.translate(sphere2, Vector3D(-3, 0, -5));	
+
+	raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
+	raytracer.translate(sphere3, Vector3D(0, 1, -4));	
+
+
 
 	raytracer.translate(plane, Vector3D(0, 0, -7));	
 	raytracer.rotate(plane, 'z', 45); 
