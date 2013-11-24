@@ -244,7 +244,7 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 		computeShading(ray); 
 		col = ray.col;
 		
-		if (true) {
+		if (!(ray.intersection.mat->specular == Colour(0, 0, 0))) {
 			Vector3D oppositeRayDir = -ray.dir;
 			oppositeRayDir.normalize();
 			Vector3D normal = ray.intersection.normal;
@@ -258,7 +258,6 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 			Vector3D distanceVector = ray.intersection.point - reflectionRay.intersection.point;
 			double distance = distanceVector.length();
 			double dampingFactor = 1.0 / pow(distance, 2.0);
-			// dampingFactor = 1;
 			col = col +  dampingFactor * reflectionColour * ray.intersection.mat->specular;
 		}
 

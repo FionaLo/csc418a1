@@ -229,6 +229,12 @@ Colour& Colour::operator =(const Colour& other) {
 	return *this;
 }
 
+bool Colour::operator ==(const Colour& other) {
+	return isSameDouble(m_data[0], other.m_data[0]) && 
+	isSameDouble(m_data[1], other.m_data[1]) &&
+	isSameDouble(m_data[2], other.m_data[2]);
+}
+
 Colour Colour::operator *(const Colour& other) {
 	return Colour(m_data[0]*other.m_data[0], 
 		m_data[1]*other.m_data[1], 

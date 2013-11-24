@@ -115,6 +115,8 @@ public:
 	Colour(const Colour& other); 
 
 	Colour& operator =(const Colour& other); 
+	bool operator ==(const Colour& other); 
+
 	Colour operator *(const Colour& other); 
 	double& operator[](int i);  
 	double operator[](int i) const; 
