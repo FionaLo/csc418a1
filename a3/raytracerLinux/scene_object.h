@@ -34,3 +34,21 @@ public:
 			const Matrix4x4& modelToWorld );
 };
 
+class UnitCylinder : public SceneObject {
+public:
+	bool intersect( Ray3D& ray, const Matrix4x4& worldToModel,
+			const Matrix4x4& modelToWorld );
+};
+
+
+
+static double discriminant(double a, double b, double c) {
+	return (b * b) - (4 * a * c);
+}
+
+static void quadSolve(double a, double b, double c, double &root1, double &root2) {
+	double term1 = -b;
+	double term2 = sqrt(discriminant(a, b, c));
+	root1 = (term1 + term2) / (2 * a);
+	root2 = (term1 - term2) / (2 * a);
+}

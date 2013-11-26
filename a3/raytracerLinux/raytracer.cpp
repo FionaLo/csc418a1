@@ -18,7 +18,7 @@
 #include <cstdlib>
 
 using namespace std;
-#define SHADE_DEPTH 10
+#define SHADE_DEPTH 1
 
 Raytracer::Raytracer() : _lightSource(NULL) {
 	_root = new SceneDagNode();
@@ -342,6 +342,9 @@ int main(int argc, char* argv[])
 	Material highSphere( Colour(0, 0, 0), Colour(0.7, 0.05, 0.05), 
 			Colour(0.916228, 0.616228, 0.516228), 
 			45.0 );
+	Material weird( Colour(0.4, 0, 0.7), Colour(0.1, 0.445, 0.95), 
+			Colour(0.228, 0.628, 0.58), 
+			12.0 );
 
 
 	// Defines a point light source.
@@ -354,6 +357,7 @@ int main(int argc, char* argv[])
 	SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &highSphere );
 
 	SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
+	SceneDagNode* cylinder = raytracer.addObject( new UnitCylinder(), &weird );
 	
 	// Apply some transformations to the unit square.
 	double factor1[3] = { 1.0, 2.0, 1.0 };
@@ -369,6 +373,8 @@ int main(int argc, char* argv[])
 	raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
 	raytracer.translate(sphere3, Vector3D(0, 1, -4));	
 
+	raytracer.scale(cylinder, Point3D(0, 0, 0), factor3);
+	raytracer.translate(cylinder, Vector3D(-1, -1, -1));
 
 
 	raytracer.translate(plane, Vector3D(0, 0, -7));	
