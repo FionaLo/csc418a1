@@ -18,7 +18,7 @@
 #include <cstdlib>
 
 using namespace std;
-#define SHADE_DEPTH 10
+#define SHADE_DEPTH 4
 
 Raytracer::Raytracer() : _lightSource(NULL) {
 	_root = new SceneDagNode();
@@ -244,7 +244,7 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 		computeShading(ray); 
 		col = ray.col;
 		
-		if (!(ray.intersection.mat->specular == Colour(0, 0, 0))) {
+		if (ray.intersection.mat->isReflective()) {
 			Vector3D oppositeRayDir = -ray.dir;
 			oppositeRayDir.normalize();
 			Vector3D normal = ray.intersection.normal;
@@ -259,10 +259,62 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 			double distance = distanceVector.length();
 			double dampingFactor = 1.0 / pow(distance, 2.0);
 			col = col +  dampingFactor * reflectionColour * ray.intersection.mat->specular;
+			col.clamp();
+		}
+		if (ray.intersection.mat->isRefractive()) {
+
+// The directions of the reflected and refracted rays are given by the following formulas. For a ray with direction V, and a surface with normal N (the normal is just the direction perpendicular to the surface - pointing directly away from it), the reflected ray direction Rl is given by
+
+//     c1 = -dot_product( N, V )
+//     Rl = V + (2 * N * c1 ) 
+
+// Note that since V, N, and Rl are vectors with x, y, and z components, the arithmetic on them is performed per-component. The refracted ray direction Rr is given by
+
+//     n1 = index of refraction of original medium
+//     n2 = index of refraction of new medium
+//     n = n1 / n2
+//     c2 = sqrt( 1 - n2 * (1 - c12) )
+
+//     Rr = (n * V) + (n * c1 - c2) * N 
+
+			double c1 = ray.indexOfRefractionOfStartingMaterial;
+			double c2 = ray.intersection.mat->refractionIndex;
+			double n =  c2 / c1;
+
+			Vector3D oppositeRayDir = -ray.dir;
+			oppositeRayDir.normalize();
+
+			Vector3D normal = ray.intersection.normal;
+			normal.normalize();
+
+			Vector3D reflectionDirection = 2 * (oppositeRayDir.dot(normal)) * normal - oppositeRayDir;
+			reflectionDirection.normalize();
+
+			double costheta1 = normal.dot(oppositeRayDir);
+			double sintheta1 = sqrt(1 - pow(costheta1, 2));
+			double sintheta2 = n * sintheta1;
+			double costheta2 = sqrt(1 - pow(sintheta2, 2));
+			if (c2 > c1) {
+				double critSin = sin(c1 / c2);
+				if (sintheta1 > critSin) {
+					goto end;
+				}
+			}
+			Vector3D refractionDirection = -n * reflectionDirection + (n * costheta1 - costheta2) * normal; 
+			refractionDirection.normalize();
+			// cout << "Ray dir is " << ray.dir << endl << "Refracted dir is " << refractionDirection << endl;
+
+			Ray3D refractedRay = Ray3D(ray.intersection.point + 0.001 * refractionDirection, refractionDirection);
+			refractedRay.indexOfRefractionOfStartingMaterial = ray.intersection.mat->refractionIndex;
+			Colour refractionColour = shadeRay(refractedRay, depth - 1);
+			// cout << "refraction colour is  " << refractionColour << endl;
+
+			col = col + refractionColour;
+			col.clamp();
 		}
 
 	}
-
+	end:
 	// You'll want to call shadeRay recursively (with a different ray, 
 	// of course) here to implement reflection/refraction effects.  
 	col.clamp();
@@ -335,9 +387,9 @@ int main(int argc, char* argv[])
 	Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
 			Colour(0.316228, 0.316228, 0.316228), 
 			12.8, 0 );
-	Material glass( Colour(1.0, 1.0, 1.0), Colour(1.0, 1.0, 1.0), 
-		Colour(1.0, 1.0, 1.0),
-		100, 1.5);
+	Material glass( Colour(0, 0, 0), Colour(0.1, 0.1, 0.1), 
+		Colour(0.1, 0.1, 0.1),
+		1, 1.5);
 
 	// Defines a point light source.
 	raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
@@ -355,13 +407,6 @@ int main(int argc, char* argv[])
 	raytracer.rotate(sphere, 'x', -45); 
 	raytracer.rotate(sphere, 'z', 45); 
 	raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
-
-	raytracer.translate(sphere2, Vector3D(-3, 0, -5));	
-
-	raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
-	raytracer.translate(sphere3, Vector3D(0, 1, -4));	
-
-
 
 	raytracer.translate(plane, Vector3D(0, 0, -7));	
 	raytracer.rotate(plane, 'z', 45); 

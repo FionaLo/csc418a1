@@ -138,6 +138,7 @@ public:
 		specular_exp(exp), refractionIndex(refraction) {}
 
 	bool isRefractive() { return refractionIndex > 0; };
+	bool isReflective() { return specular_exp > 0; };
 	
 	// Ambient components for Phong shading.
 	Colour ambient; 
@@ -172,9 +173,11 @@ class Ray3D {
 public:
 	Ray3D() {
 		intersection.none = true; 
+		indexOfRefractionOfStartingMaterial = 1.0;
 	}
 	Ray3D( Point3D p, Vector3D v ) : origin(p), dir(v) {
 		intersection.none = true;
+		indexOfRefractionOfStartingMaterial = 1.0;
 	}
 	// Origin and direction of the ray.
 	Point3D origin;
@@ -186,6 +189,8 @@ public:
 	// function.
 	Colour col;
 	Point3D point_at(double t_value);
+	// assume air
+	double indexOfRefractionOfStartingMaterial;
 };
 #endif
 
