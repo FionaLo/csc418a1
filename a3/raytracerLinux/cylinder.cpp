@@ -76,6 +76,7 @@ bool UnitCylinder::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 		Intersection intersection;
 		Point3D intersectionPointModelSpace = rayModelSpace.point_at(t_value);
 		intersection.point = modelToWorld * intersectionPointModelSpace;
+		// TODO:
 		intersection.normal = worldToModel.transpose() * Vector3D(intersectionPointModelSpace[0], intersectionPointModelSpace[1], intersectionPointModelSpace[2]);
 		intersection.t_value = t_value;
 		intersection.none = false;
