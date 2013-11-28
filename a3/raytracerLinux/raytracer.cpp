@@ -331,28 +331,20 @@ int main(int argc, char* argv[])
 	// Defines a material for shading.
 	Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), 
 			Colour(0.628281, 0.555802, 0.366065), 
-			51.2 );
+			51.2, 0 );
 	Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
 			Colour(0.316228, 0.316228, 0.316228), 
-			12.8 );
-	// Material shiny( Colour(0, 0, 0), Colour(0.54, 0.0, 0.63), 
-	Material shiny( Colour(0, 0, 0), Colour(0.54, 0.0, 0.63),
-			Colour(0.0, 0.0, 0.0), 
-			30.0 );
-	Material highSphere( Colour(0, 0, 0), Colour(0.7, 0.05, 0.05), 
-			Colour(0.916228, 0.616228, 0.516228), 
-			45.0 );
-
+			12.8, 0 );
+	Material glass( Colour(1.0, 1.0, 1.0), Colour(1.0, 1.0, 1.0), 
+		Colour(1.0, 1.0, 1.0),
+		100, 1.5);
 
 	// Defines a point light source.
 	raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
 				Colour(0.9, 0.9, 0.9) ) );
 
 	// Add a unit square into the scene with material mat.
-	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
-	SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &shiny );
-	SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &highSphere );
-
+	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &glass );
 	SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
 	
 	// Apply some transformations to the unit square.
