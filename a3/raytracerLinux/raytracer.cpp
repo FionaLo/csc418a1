@@ -19,6 +19,8 @@
 
 using namespace std;
 #define SHADE_DEPTH 4
+#define PI 3.14159265
+
 
 Raytracer::Raytracer() : _lightSource(NULL) {
 	_root = new SceneDagNode();
@@ -229,7 +231,64 @@ void Raytracer::flushPixelBuffer( char *file_name ) {
 	delete _bbuffer;
 }
 
+// Vector3D refract(const Vector3D& normal, const Vector3D& incident, double n1, double n2, bool& tir) {
+// 	const double n = n1 / n2;
+// 	const double cosI = -normal.dot(incident);
+// 	const double sinI = sqrt(1.0 - pow(cosI, 2.0));
+// 	const double sinT = n * sinI;
+// 	const double cosT = sqrt(1.0 - pow(sinT, 2.0));
+// 	if (sinT > 1.0) {
+// 		tir = true;
+// 		return Vector3D();
+// 	} 
+// 	Vector3D refractDir = n * -incident + (n * cosI - cosT) * normal;
+// 	refractDir.normalize();
+// 	return refractDir;
+// }
+
+Vector3D refract(const Vector3D& normal, const Vector3D& incident, double n1, double n2, bool& tir) {
+	const double n = n1 / n2;
+	// we want the angle.. check to see if normal and incident are in the proper orientations:
+	double cosI;
+	if (normal.dot(incident) < 0) {
+		cosI = (-normal).dot(incident);
+	} else {
+		cosI = normal.dot(incident);
+	}
+	 
+	const double sinT2 = n * n * (1.0 - cosI * cosI);
+
+	if (sinT2 > 1.0) {
+	  tir = true;
+	  return Vector3D();
+	}
+
+   double cosT = sqrt(1.0 - sinT2);
+   Vector3D refract = n * incident + (n * cosI - cosT) * normal;
+   refract.normalize();
+   return refract;
+}
+
+
+// Vector RayTracer::refractVector(const Vector& normal, const Vector& incident,
+//  double n1, double n2) {
+//    double n = n1 / n2;
+//    double cosI = -normal.dot(incident);
+//    double sinT2 = n * n * (1.0 - cosI * cosI);
+
+//    if (sinT2 > 1.0) {
+//       cerr << "Bad refraction vector!" << endl;
+//       exit(EXIT_FAILURE);
+//    }
+
+//    double cosT = sqrt(1.0 - sinT2);
+//    return incident * n + normal * (n * cosI - cosT);
+// }
 Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
+	return shadeRay( ray, depth, false);
+}
+
+Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 	Colour col(0.0, 0.0, 0.0); 
 
 	if (depth <= 0) {
@@ -237,10 +296,14 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 	}
 
 	traverseScene(_root, ray); 
+
 	
 	// Don't bother shading if the ray didn't hit 
 	// anything.
 	if (!ray.intersection.none) {
+		if (debug) {
+			cout << "intersection found at " << ray.intersection.point << endl;
+		}
 		computeShading(ray); 
 		col = ray.col;
 		
@@ -263,58 +326,30 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 		}
 		if (ray.intersection.mat->isRefractive()) {
 
-// The directions of the reflected and refracted rays are given by the following formulas. For a ray with direction V, and a surface with normal N (the normal is just the direction perpendicular to the surface - pointing directly away from it), the reflected ray direction Rl is given by
-
-//     c1 = -dot_product( N, V )
-//     Rl = V + (2 * N * c1 ) 
-
-// Note that since V, N, and Rl are vectors with x, y, and z components, the arithmetic on them is performed per-component. The refracted ray direction Rr is given by
-
-//     n1 = index of refraction of original medium
-//     n2 = index of refraction of new medium
-//     n = n1 / n2
-//     c2 = sqrt( 1 - n2 * (1 - c12) )
-
-//     Rr = (n * V) + (n * c1 - c2) * N 
-
-			double c1 = ray.indexOfRefractionOfStartingMaterial;
-			double c2 = ray.intersection.mat->refractionIndex;
-			double n =  c2 / c1;
-
-			Vector3D oppositeRayDir = -ray.dir;
-			oppositeRayDir.normalize();
-
 			Vector3D normal = ray.intersection.normal;
 			normal.normalize();
 
-			Vector3D reflectionDirection = 2 * (oppositeRayDir.dot(normal)) * normal - oppositeRayDir;
-			reflectionDirection.normalize();
+			Vector3D incident = ray.dir;
+			incident.normalize();
 
-			double costheta1 = normal.dot(oppositeRayDir);
-			double sintheta1 = sqrt(1 - pow(costheta1, 2));
-			double sintheta2 = n * sintheta1;
-			double costheta2 = sqrt(1 - pow(sintheta2, 2));
-			if (c2 > c1) {
-				double critSin = sin(c1 / c2);
-				if (sintheta1 > critSin) {
-					goto end;
-				}
+			double n1 = ray.intersection.mat->refractionIndex;
+			double n2 = 1.0;
+			bool tir = false;
+			Vector3D refractDir = refract(normal, incident, n1, n2, tir);
+			if (!tir) {
+				cout << "Ray dir is " << ray.dir << endl << "Refracted dir is " << refractDir << endl;
+
+				Ray3D refractedRay = Ray3D(ray.intersection.point + 0.001 * refractDir, refractDir);
+				Colour refractionColour = ray.intersection.mat->tranparency * shadeRay(refractedRay, depth - 1, true);
+				cout << "refraction colour is  " << refractionColour << endl;
+
+				col = col + refractionColour;
+				col.clamp();
+
 			}
-			Vector3D refractionDirection = -n * reflectionDirection + (n * costheta1 - costheta2) * normal; 
-			refractionDirection.normalize();
-			// cout << "Ray dir is " << ray.dir << endl << "Refracted dir is " << refractionDirection << endl;
-
-			Ray3D refractedRay = Ray3D(ray.intersection.point + 0.001 * refractionDirection, refractionDirection);
-			refractedRay.indexOfRefractionOfStartingMaterial = ray.intersection.mat->refractionIndex;
-			Colour refractionColour = shadeRay(refractedRay, depth - 1);
-			// cout << "refraction colour is  " << refractionColour << endl;
-
-			col = col + refractionColour;
-			col.clamp();
 		}
 
 	}
-	end:
 	// You'll want to call shadeRay recursively (with a different ray, 
 	// of course) here to implement reflection/refraction effects.  
 	col.clamp();
@@ -383,30 +418,30 @@ int main(int argc, char* argv[])
 	// Defines a material for shading.
 	Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), 
 			Colour(0.628281, 0.555802, 0.366065), 
-			51.2, 0 );
+			51.2, 0, 0.0 );
 	Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
 			Colour(0.316228, 0.316228, 0.316228), 
-			12.8, 0 );
-	Material glass( Colour(0, 0, 0), Colour(0.1, 0.1, 0.1), 
-		Colour(0.1, 0.1, 0.1),
-		1, 1.5);
+			12.8, 0, 0.0 );
+	Material glass( Colour(0, 0, 0), Colour(0, 0, 0), 
+		Colour(0, 0, 0),
+		0, 1.5, 0.8);
 
 	// Defines a point light source.
 	raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
 				Colour(0.9, 0.9, 0.9) ) );
 
 	// Add a unit square into the scene with material mat.
-	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &glass );
+	SceneDagNode* sphere = raytracer.addObject( new UnitSquare(), &glass );
 	SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
 	
 	// Apply some transformations to the unit square.
-	double factor1[3] = { 1.0, 2.0, 1.0 };
+	double factor1[3] = { 2.0, 2.0, 2.0 };
 	double factor2[3] = { 6.0, 6.0, 6.0 };
 	double factor3[3] = { 0.4, 0.4, 0.4 };
 	raytracer.translate(sphere, Vector3D(0, 0, -5));	
-	raytracer.rotate(sphere, 'x', -45); 
-	raytracer.rotate(sphere, 'z', 45); 
-	raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
+	// raytracer.rotate(sphere, 'x', -45); 
+	// raytracer.rotate(sphere, 'z', 45); 
+	// raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
 
 	raytracer.translate(plane, Vector3D(0, 0, -7));	
 	raytracer.rotate(plane, 'z', 45); 
