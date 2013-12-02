@@ -20,6 +20,12 @@
 #define M_PI	3.14159265358979323846
 #endif
 
+#ifndef EPSILON
+#define EPSILON 1E-3
+#endif
+
+bool isSameDouble(double dFirstVal, double dSecondVal);
+
 class Point3D {
 public:
 	Point3D(); 
@@ -182,6 +188,7 @@ public:
 	Colour col;
 	Point3D point_at(double t_value);
 };
+
 #endif
 
 
