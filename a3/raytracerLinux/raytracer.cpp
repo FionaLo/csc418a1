@@ -18,7 +18,7 @@
 #include <cstdlib>
 
 using namespace std;
-#define SHADE_DEPTH 1
+#define SHADE_DEPTH 4
 #define SHADOWS
 
 Raytracer::Raytracer() : _lightSource(NULL) {
@@ -200,16 +200,20 @@ void Raytracer::computeShading( Ray3D& ray ) {
 	    	Ray3D rayLightToObjectWorldSpace = Ray3D(lightSource->get_position(), lightToObject);
 	    	traverseScene(_root, rayLightToObjectWorldSpace);
 
-
 	    	if (rayLightToObjectWorldSpace.intersection.point == ray.intersection.point) {
 				lightSource->shade(ray);
-	    	}
+	    	} 
 	    #else 
 	    	lightSource->shade(ray);
 	    #endif
 
-
 		curLight = curLight->next;
+	}
+	// even points in shadows get ambient lighting
+	if (LightSource::RENDER_TYPE != SCENE_SIGNATURE) {
+		Colour col = ray.col + ray.intersection.mat->ambient * getAmbientLight();
+		col.clamp();
+		ray.col = col;
 	}
 }
 
@@ -311,6 +315,13 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view,
 	flushPixelBuffer(fileName);
 }
 
+void Raytracer::setAmbientLight(Colour colour) {
+	ambientLight = colour;
+}
+Colour Raytracer::getAmbientLight() {
+	return ambientLight;
+}
+
 int main(int argc, char* argv[])
 {	
 	// Build your scene and setup your camera here, by calling 
@@ -353,8 +364,9 @@ int main(int argc, char* argv[])
 
 
 	// Defines a point light source.
+	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
 	raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
-				Colour(0.9, 0.9, 0.9) ) );
+				Colour(0.9, 0.9, 0.9)) );
 
 	// Add a unit square into the scene with material mat.
 	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );

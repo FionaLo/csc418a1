@@ -20,7 +20,6 @@ double dmax(double a, double b) {
     return a < b ? b : a;
 }
 
-
 void PointLight::shade( Ray3D& ray ) {
 	// TODO: implement this function to fill in values for ray.col 
 	// using phong shading.  Make sure your vectors are normalized, and
@@ -54,14 +53,12 @@ void PointLight::shade( Ray3D& ray ) {
             col = material->diffuse;
         break;
         case DIFFUSE_AMBIENT:
-            col = material->ambient * _col_ambient + 
-                  dmax(0, ldotn) * material->diffuse * _col_diffuse;
+            col = dmax(0, ldotn) * material->diffuse * _col_diffuse;
         break;
         case PHONG:
             {
             double vdotr = view_vector.dot(reflect_vector);
-            col = material->ambient * _col_ambient + 
-                  dmax(0, ldotn) * material->diffuse * _col_diffuse +
+            col = dmax(0, ldotn) * material->diffuse * _col_diffuse +
                   dmax(0, pow(vdotr, material->specular_exp)) * material->specular * _col_specular;
             }
         break;

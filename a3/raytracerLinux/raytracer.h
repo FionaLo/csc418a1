@@ -86,6 +86,8 @@ public:
 
 	// Add a light source.
 	LightListNode* addLightSource( LightSource* light );
+	void setAmbientLight(Colour colour);
+	Colour getAmbientLight();
 
 	// Transformation functions are implemented by right-multiplying 
 	// the transformation matrix to the node's transformation matrix.
@@ -136,6 +138,9 @@ private:
 	unsigned char* _rbuffer;
 	unsigned char* _gbuffer;
 	unsigned char* _bbuffer;
+
+	// There should only be one ambient light, so might as well put it here
+	Colour ambientLight;
 
 	// Maintain global transformation matrices similar to OpenGL's matrix
 	// stack.  These are used during scene traversal. 

@@ -27,21 +27,17 @@ public:
 	static RenderType RENDER_TYPE;
 };
 
-// A point light is defined by its position in world space and its
-// colour.
+// A point light is defined by its position in world space and its specular and diffuse colours
 class PointLight : public LightSource {
 public:
-	PointLight( Point3D pos, Colour col ) : _pos(pos), _col_ambient(col), 
-	_col_diffuse(col), _col_specular(col) {}
-	PointLight( Point3D pos, Colour ambient, Colour diffuse, Colour specular ) 
-	: _pos(pos), _col_ambient(ambient), _col_diffuse(diffuse), 
-	_col_specular(specular) {}
+	PointLight( Point3D pos, Colour col ) : _pos(pos), _col_diffuse(col), _col_specular(col) {}
+	PointLight( Point3D pos, Colour diffuse, Colour specular ) 
+	: _pos(pos), _col_diffuse(diffuse), _col_specular(specular) {}
 	void shade( Ray3D& ray );
 	Point3D get_position() const { return _pos; }
 
 private:
 	Point3D _pos;
-	Colour _col_ambient;
 	Colour _col_diffuse; 
 	Colour _col_specular; 
 };
