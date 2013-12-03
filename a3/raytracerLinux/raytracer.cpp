@@ -244,7 +244,29 @@ void Raytracer::flushPixelBuffer( char *file_name ) {
 	delete _bbuffer;
 }
 
-Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
+void reflect(Vector3D& d, Vector3D& n, Vector3D& r) {
+	r = d - (2 * (d.dot(n)) * n);
+	r.normalize();
+}
+
+bool refract(Vector3D d, Vector3D n, double n1, Vector3D& t) {
+	double ddotn = d.dot(n);
+	double n2 = 1.0; // assume air
+	double sqrtTerm = sqrt(1.0 - ((pow(n1, 2) * (1 - pow(ddotn, 2))) / pow(n2, 2)));
+	if (sqrtTerm < 0) {
+		return false;
+	} 
+	Vector3D term1 = (1 / n2) * (n1 * (d - (ddotn * n)));
+	Vector3D term2 = sqrtTerm * n;
+	term1.normalize();
+	term2.normalize();
+	t = term1 - term2;
+	t.normalize();
+	return true;
+}
+
+
+Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 	Colour col(0.0, 0.0, 0.0); 
 
 	if (depth <= 0) {
@@ -259,25 +281,70 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 		computeShading(ray); 
 		col = ray.col;
 		
-		if (!(ray.intersection.mat->specular == Colour(0, 0, 0))) {
-			Vector3D oppositeRayDir = -ray.dir;
-			oppositeRayDir.normalize();
-			Vector3D normal = ray.intersection.normal;
-			normal.normalize();
+		// if (!(ray.intersection.mat->specular == Colour(0, 0, 0))) {
+		// 	Vector3D oppositeRayDir = -ray.dir;
+		// 	oppositeRayDir.normalize();
+		// 	Vector3D normal = ray.intersection.normal;
+		// 	normal.normalize();
 
-			Vector3D reflectionDirection = 2 * (oppositeRayDir.dot(normal)) * normal - oppositeRayDir;
-			reflectionDirection.normalize();
-			Ray3D reflectionRay = Ray3D(ray.intersection.point + 0.001 * reflectionDirection, reflectionDirection);
-			Colour reflectionColour = shadeRay(reflectionRay, depth - 1);
+		// 	Vector3D reflectionDirection = 2 * (oppositeRayDir.dot(normal)) * normal - oppositeRayDir;
+		// 	reflectionDirection.normalize();
+		// 	Ray3D reflectionRay = Ray3D(ray.intersection.point + 0.001 * reflectionDirection, reflectionDirection);
+		// 	Colour reflectionColour = shadeRay(reflectionRay, depth - 1);
 
-			Vector3D distanceVector = ray.intersection.point - reflectionRay.intersection.point;
-			double distance = distanceVector.length();
-			double dampingFactor = 1.0 / pow(distance, 2.0);
-			col = col +  dampingFactor * reflectionColour * ray.intersection.mat->specular;
+		// 	Vector3D distanceVector = ray.intersection.point - reflectionRay.intersection.point;
+		// 	double distance = distanceVector.length();
+		// 	double dampingFactor = 1.0 / pow(distance, 2.0);
+		// 	col = col +  dampingFactor * reflectionColour * ray.intersection.mat->specular;
+		// }
+
+		if (ray.intersection.mat->isDieletric()) {
+
+			Vector3D d = ray.dir;
+			d.normalize();
+			Vector3D n = ray.intersection.normal;
+			n.normalize();
+
+			double c, kr, kg, kb;
+			Colour k;
+			Vector3D t;
+
+			Vector3D r;
+			reflect(d, n, r);
+
+			Ray3D reflectionRay = Ray3D(ray.intersection.point + EPSILON * r, r);
+
+			if (d.dot(n) < 0) {
+				refract(d, n, ray.intersection.mat->indexOfRefraction, t);
+				c = -d.dot(n);
+				k = Colour(1.0, 1.0, 1.0);
+			} else {
+				// double t_val = ray.intersection.t_value;
+				// // complete guess
+				// double ar = 0.15 * ray.intersection.mat->diffuse[0]; 
+				// double ag = 0.15 * ray.intersection.mat->diffuse[1];
+				// double ab = 0.15 * ray.intersection.mat->diffuse[2];
+				// kr = exp(-ar * t_val);
+				// kg = exp(-ag * t_val);
+				// kb = exp(-ab * t_val);
+				// k = Colour(kr, kg, kb);
+				k = Colour(1.0, 1.0, 1.0);
+				if (refract(d, -n, 1.0 / ray.intersection.mat->indexOfRefraction, t)) {
+					c = t.dot(n);
+				} else {
+					col = col + k * shadeRay(reflectionRay, depth - 1);
+					goto end;
+				}
+			}
+			Ray3D transmittedRay = Ray3D(ray.intersection.point + EPSILON * t, t);
+			double r0 = pow(ray.intersection.mat->indexOfRefraction - 1, 2) / pow(ray.intersection.mat->indexOfRefraction + 1, 2);
+			double R = r0 + (1 - r0) * pow(1 - c, 5);
+			Colour reflect = R * shadeRay(reflectionRay, depth - 1); 
+			Colour refract = (1 - R) * shadeRay(transmittedRay, depth - 1, true);
+			col = col + k * (refract + reflect);
 		}
-
 	}
-
+end:
 	// You'll want to call shadeRay recursively (with a different ray, 
 	// of course) here to implement reflection/refraction effects.  
 	col.clamp();
@@ -435,6 +502,11 @@ Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648),
 Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
                 Colour(0.316228, 0.316228, 0.316228), 
                 12.8 );
+	Material glass( Colour(0.5, 0.5, 0.5), Colour(0.5, 0.5, 0.5), 
+			Colour(0.5, 0.5, 0.5), 
+			3.0 );
+	glass.indexOfRefraction = 1.5;
+
 
 /* The default scene, given with the assignment */
 void defaultScene(Raytracer& raytracer) {
@@ -446,6 +518,9 @@ void defaultScene(Raytracer& raytracer) {
     // Defines a point light source.
     raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
                             Colour(0.9, 0.9, 0.9) ) );
+	raytracer.addLightSource( new PointLight(Point3D(0, 1, -5), 
+				Colour(0.9, 0.9, 0.9)) );
+
 
     // Add a unit square into the scene with material mat.
     SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
