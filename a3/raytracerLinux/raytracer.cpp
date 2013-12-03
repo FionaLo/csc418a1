@@ -20,6 +20,12 @@
 #include <vector>
 #include <assert.h>
 #include "area_light_source.h"
+#include <vector>
+#include <iomanip>
+#include <locale>
+#include <sstream>
+#include <string>
+#include "assert.h"
 
 using namespace std;
  
@@ -428,6 +434,37 @@ int main(int argc, char* argv[])
 			12.0 );
 
 
+  //open text file for input
+	ifstream infile("onetri.stl", ios::in);
+	if(!infile) {
+		std::cerr <<" failed to open file\n";
+		exit(-1);
+	}
+	vector<string> *lines_of_text = new vector<string>;
+	vector<vector <double> > coords;
+	string textline;
+	while(getline(infile, textline, '\n')) {
+		std::vector<double> point;
+		double a;
+		double b;
+		double c;
+		stringstream ss(textline);
+		ss >> a >> b >> c;
+		point.push_back(a);
+		point.push_back(b);
+		point.push_back(c);
+		coords.push_back(point);
+	}
+	assert(coords.size() % 4 == 0);
+	for (unsigned int i = 0; i < coords.size(); i+=4) {
+		MyTriangle* myTriangle = new MyTriangle(
+					Vector3D(coords[i][0], coords[i][1], coords[i][2]),
+					 Point3D(coords[i+1][0], coords[i+1][1], coords[i+1][2]),
+					 Point3D(coords[i+2][0], coords[i+2][1], coords[i+2][2]),
+					 Point3D(coords[i+3][0], coords[i+3][1], coords[i+3][2]));
+		SceneDagNode* tri = raytracer.addObject(myTriangle, &gold);
+		raytracer.translate(tri, Vector3D(0, 0, -5));
+	}
 	// Defines a point light source.
 	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
 	#ifdef SOFT_SHADOWS
@@ -438,42 +475,42 @@ int main(int argc, char* argv[])
 				Colour(0.9, 0.9, 0.9) ));
 	#endif
 
-	// Add a unit square into the scene with material mat.
-	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
-	SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &shiny );
-	SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &highSphere );
+	// // Add a unit square into the scene with material mat.
+	// SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
+	// SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &shiny );
+	// SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &highSphere );
 
-	SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
-	SceneDagNode* cylinder = raytracer.addObject( new UnitCylinder(), &weird );
-
-
-	// Apply some transformations to the unit square.
-	double factor1[3] = { 1.0, 2.0, 1.0 };
-	double factor2[3] = { 15.0, 15.0, 15.0 };
-	double factor3[3] = { 0.4, 0.4, 0.4 };
-	double cylinder_scale[3] = { 1.0, 2.0, 1.0 };
-
-	raytracer.scale(cylinder, Point3D(0, 0, 0), cylinder_scale);
-	raytracer.translate(cylinder, Vector3D(3, 1, -5));
+	// SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
+	// SceneDagNode* cylinder = raytracer.addObject( new UnitCylinder(), &weird );
 
 
-	raytracer.translate(sphere, Vector3D(0, 0, -5)); 
-	raytracer.rotate(sphere, 'x', -45); 
-	raytracer.rotate(sphere, 'z', 45); 
-	raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
+	// // Apply some transformations to the unit square.
+	// double factor1[3] = { 1.0, 2.0, 1.0 };
+	// double factor2[3] = { 6.0, 6.0, 6.0 };
+	// double factor3[3] = { 0.4, 0.4, 0.4 };
+	// double cylinder_scale[3] = { 1.0, 2.0, 1.0 };
 
-	raytracer.translate(sphere2, Vector3D(-3, 0, -10));	
-
-	raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
-	raytracer.translate(sphere3, Vector3D(0, 1, -4));	
-
-	raytracer.scale(cylinder, Point3D(0, 0, 0), factor3);
-	raytracer.translate(cylinder, Vector3D(-1, -1, -1));
+	// raytracer.scale(cylinder, Point3D(0, 0, 0), cylinder_scale);
+	// raytracer.translate(cylinder, Vector3D(3, 1, -5));
 
 
-	raytracer.translate(plane, Vector3D(0, 0, -15));	
-	raytracer.rotate(plane, 'z', 45); 
-	raytracer.scale(plane, Point3D(0, 0, 0), factor2);
+	// raytracer.translate(sphere, Vector3D(0, 0, -5));	
+	// raytracer.rotate(sphere, 'x', -45); 
+	// raytracer.rotate(sphere, 'z', 45); 
+	// raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
+
+	// raytracer.translate(sphere2, Vector3D(-3, 0, -5));	
+
+	// raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
+	// raytracer.translate(sphere3, Vector3D(0, 1, -4));	
+
+	// raytracer.scale(cylinder, Point3D(0, 0, 0), factor3);
+	// raytracer.translate(cylinder, Vector3D(-1, -1, -1));
+
+
+	// raytracer.translate(plane, Vector3D(0, 0, -7));	
+	// raytracer.rotate(plane, 'z', 45); 
+	// raytracer.scale(plane, Point3D(0, 0, 0), factor2);
  
 	// Render the scene, feel free to make the image smaller for
 	// testing purposes.	
