@@ -370,7 +370,7 @@ int main(int argc, char* argv[])
 
 
   //open text file for input
-	ifstream infile("onetri.stl", ios::in);
+	ifstream infile("humanoid.stl", ios::in);
 	if(!infile) {
 		std::cerr <<" failed to open file\n";
 		exit(-1);
@@ -390,16 +390,23 @@ int main(int argc, char* argv[])
 		point.push_back(c);
 		coords.push_back(point);
 	}
-	assert(coords.size() % 4 == 0);
+
+    SceneDagNode* null_humanoid = raytracer.addObject( new NullObject(), &gold );
+
+    assert(coords.size() % 4 == 0);
 	for (unsigned int i = 0; i < coords.size(); i+=4) {
 		MyTriangle* myTriangle = new MyTriangle(
-					Vector3D(coords[i][0], coords[i][1], coords[i][2]),
-					 Point3D(coords[i+1][0], coords[i+1][1], coords[i+1][2]),
-					 Point3D(coords[i+2][0], coords[i+2][1], coords[i+2][2]),
-					 Point3D(coords[i+3][0], coords[i+3][1], coords[i+3][2]));
-		SceneDagNode* tri = raytracer.addObject(myTriangle, &gold);
-		raytracer.translate(tri, Vector3D(0, 0, -5));
-	}
+					 Vector3D (coords[i][0],   coords[i][1],   coords[i][2]),
+					 Point3D  (coords[i+1][0], coords[i+1][1], coords[i+1][2]),
+					 Point3D  (coords[i+2][0], coords[i+2][1], coords[i+2][2]),
+					 Point3D  (coords[i+3][0], coords[i+3][1], coords[i+3][2]));
+        SceneDagNode* tri = raytracer.addObject(null_humanoid, myTriangle, &gold);
+    }
+    
+	raytracer.translate(null_humanoid, Vector3D(0, -15, -25));
+	raytracer.rotate(null_humanoid, 'y', -90); 
+	raytracer.rotate(null_humanoid, 'x', -90); 
+
 	// Defines a point light source.
 	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
 	raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
@@ -412,7 +419,6 @@ int main(int argc, char* argv[])
 
 	// SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
 	// SceneDagNode* cylinder = raytracer.addObject( new UnitCylinder(), &weird );
-
 
 	// // Apply some transformations to the unit square.
 	// double factor1[3] = { 1.0, 2.0, 1.0 };
