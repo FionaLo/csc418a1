@@ -107,7 +107,7 @@ public:
 	SceneDagNode *_root;
 	// Traversal code for the scene graph, the ray is transformed into 
 	// the object space of each node where intersection is performed.
-	void traverseScene( SceneDagNode* node, Ray3D& ray );
+	void traverseScene( SceneDagNode* node, Ray3D& ray, Matrix4x4 modelToWorld, Matrix4x4 worldToModel );
 
 	// for pthreads
 	typedef struct {
@@ -147,7 +147,7 @@ private:
 
 	// Return the colour of the ray after intersection and shading, call 
 	// this function recursively for reflection and refraction.  
-	Colour shadeRay( Ray3D& ray , int depth); 
+	Colour shadeRay( Ray3D& ray, int depth, Matrix4x4 modelToWorld, Matrix4x4 worldToModel );
 
 	// Constructs a view to world transformation matrix based on the
 	// camera parameters.
@@ -173,10 +173,6 @@ private:
 	// There should only be one ambient light, so might as well put it here
 	Colour ambientLight;
 
-	// Maintain global transformation matrices similar to OpenGL's matrix
-	// stack.  These are used during scene traversal. 
-	Matrix4x4 _modelToWorld;
-	Matrix4x4 _worldToModel;
 };
 
 #endif

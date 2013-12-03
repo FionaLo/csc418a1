@@ -24,7 +24,7 @@
 using namespace std;
 #define SHADE_DEPTH 1
 // #define SHADOWS
-#define NUM_THREADS 1
+#define NUM_THREADS 2
 // turns on soft shadows - control the number of rays in area_light_source.h
 // #define SOFT_SHADOWS
 
@@ -165,30 +165,28 @@ Matrix4x4 Raytracer::initInvViewMatrix( Point3D eye, Vector3D view,
 	return mat; 
 }
 
-void Raytracer::traverseScene( SceneDagNode* node, Ray3D& ray ) {
+void Raytracer::traverseScene( SceneDagNode* node, Ray3D& ray, Matrix4x4 modelToWorld, Matrix4x4 worldToModel ) {
 	SceneDagNode *childPtr;
 
 	// Applies transformation of the current node to the global
 	// transformation matrices.
-	_modelToWorld = _modelToWorld*node->trans;
-	_worldToModel = node->invtrans*_worldToModel; 
+	Matrix4x4 newModelToWorld;
+	Matrix4x4 newWorldToModel;
+	newModelToWorld = modelToWorld*node->trans;
+	newWorldToModel = node->invtrans*worldToModel; 
 	if (node->obj) {
 		// Perform intersection.
-		if (node->obj->intersect(ray, _worldToModel, _modelToWorld)) {
+		if (node->obj->intersect(ray, newWorldToModel, newModelToWorld)) {
 			ray.intersection.mat = node->mat;
 		}
 	}
 	// Traverse the children.
 	childPtr = node->child;
 	while (childPtr != NULL) {
-		traverseScene(childPtr, ray);
+		traverseScene(childPtr, ray, newModelToWorld, newWorldToModel);
 		childPtr = childPtr->next;
 	}
 
-	// Removes transformation of the current node from the global
-	// transformation matrices.
-	_worldToModel = node->trans*_worldToModel;
-	_modelToWorld = _modelToWorld*node->invtrans;
 }
 
 void Raytracer::computeShading( Ray3D& ray ) {
@@ -245,14 +243,14 @@ void Raytracer::flushPixelBuffer( char *file_name ) {
 	delete _bbuffer;
 }
 
-Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
+Colour Raytracer::shadeRay( Ray3D& ray, int depth, Matrix4x4 modelToWorld, Matrix4x4 worldToModel ) {
 	Colour col(0.0, 0.0, 0.0); 
 
 	if (depth <= 0) {
 		return col;
 	}
 
-	traverseScene(_root, ray); 
+	traverseScene(_root, ray, modelToWorld, worldToModel); 
 	
 	// Don't bother shading if the ray didn't hit 
 	// anything.
@@ -269,7 +267,7 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 			Vector3D reflectionDirection = 2 * (oppositeRayDir.dot(normal)) * normal - oppositeRayDir;
 			reflectionDirection.normalize();
 			Ray3D reflectionRay = Ray3D(ray.intersection.point + 0.001 * reflectionDirection, reflectionDirection);
-			Colour reflectionColour = shadeRay(reflectionRay, depth - 1);
+			Colour reflectionColour = shadeRay(reflectionRay, depth - 1, modelToWorld, worldToModel);
 
 			Vector3D distanceVector = ray.intersection.point - reflectionRay.intersection.point;
 			double distance = distanceVector.length();
@@ -310,18 +308,15 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view,
 	for (int i = 0; i < NUM_THREADS; i++) {
 		pthread_join(threads[i], NULL);
 	}
-	cout << "THREADS JOINED" << endl;
 
 	flushPixelBuffer(fileName);
 }
  
 void Raytracer::doRender(int iStart, int iEnd, Point3D eye, Vector3D view, Vector3D up, double fov) {
-	cout << "New thread starting" << endl;
 	// Construct a ray for each pixel.
 	int width = _scrWidth;
 	int height = _scrHeight;
 	Matrix4x4 viewToWorld;
-	cout << "here" << endl;
 
 	double factor = (double(height)/2)/tan(fov*M_PI/360.0);
 
@@ -342,14 +337,16 @@ void Raytracer::doRender(int iStart, int iEnd, Point3D eye, Vector3D view, Vecto
 			Ray3D rayViewSpace(origin, imagePlane - origin);
 			Ray3D rayWorldSpace(viewToWorld * rayViewSpace.origin, viewToWorld * rayViewSpace.dir);
 			
-			Colour col = shadeRay(rayWorldSpace, SHADE_DEPTH); 
+			// TODO: figrue this out
+			Matrix4x4 modelToWorld;
+			Matrix4x4 worldToModel;
+			Colour col = shadeRay(rayWorldSpace, SHADE_DEPTH, modelToWorld, worldToModel); 
 
 			_rbuffer[i*width+j] = int(col[0]*255);
 			_gbuffer[i*width+j] = int(col[1]*255);
 			_bbuffer[i*width+j] = int(col[2]*255);
 		}
 	}
-	cout << "Thread complete" << endl;
 }
 
 void Raytracer::setAmbientLight(Colour colour) {
