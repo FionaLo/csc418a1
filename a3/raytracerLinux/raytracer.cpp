@@ -16,10 +16,11 @@
 #include <cmath>
 #include <iostream>
 #include <cstdlib>
+#include "area_light_source.h"
 
 using namespace std;
 #define SHADE_DEPTH 4
-#define SHADOWS
+// #define SHADOWS
 
 Raytracer::Raytracer() : _lightSource(NULL) {
 	_root = new SceneDagNode();
@@ -202,7 +203,7 @@ void Raytracer::computeShading( Ray3D& ray ) {
 
 	    	if (rayLightToObjectWorldSpace.intersection.point == ray.intersection.point) {
 				lightSource->shade(ray);
-	    	} 
+	    	}
 	    #else 
 	    	lightSource->shade(ray);
 	    #endif
@@ -365,8 +366,8 @@ int main(int argc, char* argv[])
 
 	// Defines a point light source.
 	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
-	raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
-				Colour(0.9, 0.9, 0.9)) );
+	raytracer.addLightSource( new AreaLight(Point3D(0, 0, 5), Vector3D(0, 1, 0), Vector3D(1, 0, 0), 1, 1,  
+				Colour(0.9, 0.9, 0.9), raytracer ));
 
 	// Add a unit square into the scene with material mat.
 	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );

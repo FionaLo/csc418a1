@@ -8,13 +8,10 @@
 
 ***********************************************************/
 
-#include "util.h"
+#ifndef _LIGHT_
+#define _LIGHT_
 
-enum RenderType { 
-	SCENE_SIGNATURE,
-	DIFFUSE_AMBIENT,
-	PHONG
-};
+#include "util.h"
 
 // Base class for a light source.  You could define different types
 // of lights here, but point light is sufficient for most scenes you
@@ -35,9 +32,13 @@ public:
 	: _pos(pos), _col_diffuse(diffuse), _col_specular(specular) {}
 	void shade( Ray3D& ray );
 	Point3D get_position() const { return _pos; }
-
+	void setPosition(Point3D pos) {
+		_pos = pos;
+	}
 private:
 	Point3D _pos;
 	Colour _col_diffuse; 
 	Colour _col_specular; 
 };
+
+#endif

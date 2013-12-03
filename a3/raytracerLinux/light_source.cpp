@@ -10,7 +10,8 @@
 
 #include <cmath>
 #include "light_source.h"
-
+#include "area_light_source.h"
+        
 // RenderType LightSource::RENDER_TYPE = SCENE_SIGNATURE;
 // RenderType LightSource::RENDER_TYPE = DIFFUSE_AMBIENT; 
 RenderType LightSource::RENDER_TYPE = PHONG; 

@@ -24,6 +24,12 @@
 #define EPSILON 1E-3
 #endif
 
+enum RenderType { 
+	SCENE_SIGNATURE,
+	DIFFUSE_AMBIENT,
+	PHONG
+};
+
 bool isSameDouble(double dFirstVal, double dSecondVal);
 
 class Point3D {

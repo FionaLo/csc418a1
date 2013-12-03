@@ -11,6 +11,9 @@
 
 ***********************************************************/
 
+#ifndef _RAYTRACER_
+#define _RAYTRACER_
+
 #include "util.h"
 #include "scene_object.h"
 #include "light_source.h"
@@ -100,6 +103,12 @@ public:
 
 	// Apply scaling about a fixed point origin.
 	void scale( SceneDagNode* node, Point3D origin, double factor[3] );
+
+	SceneDagNode *_root;
+	// Traversal code for the scene graph, the ray is transformed into 
+	// the object space of each node where intersection is performed.
+	void traverseScene( SceneDagNode* node, Ray3D& ray );
+
 	
 private:
 	// Allocates and initializes the pixel buffer for rendering, you
@@ -118,9 +127,6 @@ private:
 	// camera parameters.
 	Matrix4x4 initInvViewMatrix( Point3D eye, Vector3D view, Vector3D up );
 
-	// Traversal code for the scene graph, the ray is transformed into 
-	// the object space of each node where intersection is performed.
-	void traverseScene( SceneDagNode* node, Ray3D& ray );
 
 	// After intersection, calculate the colour of the ray by shading it
 	// with all light sources in the scene.
@@ -132,7 +138,6 @@ private:
 
 	// Light list and scene graph.
 	LightListNode *_lightSource;
-	SceneDagNode *_root;
 
 	// Pixel buffer.
 	unsigned char* _rbuffer;
@@ -147,3 +152,5 @@ private:
 	Matrix4x4 _modelToWorld;
 	Matrix4x4 _worldToModel;
 };
+
+#endif
