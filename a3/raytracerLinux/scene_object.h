@@ -40,6 +40,17 @@ public:
 			const Matrix4x4& modelToWorld );
 };
 
+class MyTriangle : public SceneObject {
+public:
+	MyTriangle(Vector3D norm, Point3D a, Point3D b, Point3D c);
+	bool intersect( Ray3D& ray, const Matrix4x4& worldToModel,
+			const Matrix4x4& modelToWorld );
+
+private:
+	Point3D p0, p1, p2;
+	Vector3D n;
+};
+
 
 
 static double discriminant(double a, double b, double c) {

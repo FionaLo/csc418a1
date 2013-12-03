@@ -12,6 +12,8 @@
 #include <iostream>
 #include "scene_object.h"
 
+using namespace std;
+
 bool UnitSquare::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 		const Matrix4x4& modelToWorld ) {
 	// TODO: implement intersection code for UnitSquare, which is
@@ -112,5 +114,60 @@ bool UnitSphere::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 		ray.intersection = intersection;
 	}
 
+	return intersection_occured && intersection_overwrite;
+}
+
+MyTriangle::MyTriangle(Vector3D norm, Point3D a, Point3D b, Point3D c) {
+	n = norm;
+	p0 = a;
+	p1 = b;
+	p2 = c;
+
+}
+bool MyTriangle::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
+		const Matrix4x4& modelToWorld ) {
+
+	bool intersection_occured = false;
+	bool intersection_overwrite = false;
+
+	Ray3D rayModelSpace = Ray3D(worldToModel * ray.origin, worldToModel * ray.dir);
+
+	Point3D p0model = worldToModel * p0;
+	Point3D p1model = worldToModel * p1;
+	Point3D p2model = worldToModel * p2;
+	Vector3D normal = worldToModel * n;
+
+	cout << p0model << p1model << p2model << normal << endl;
+
+	double denom = rayModelSpace.dir.dot(normal);
+	if (isSameDouble(denom,0)) {
+		return false;
+	}
+	double t_value = -(rayModelSpace.origin - p0model).dot(normal) / denom;
+	Point3D planeIntersect = rayModelSpace.point_at(t_value);
+
+	cout << planeIntersect << endl;
+
+	if ((p1model - p0model).cross(planeIntersect - p0model).dot(normal) >= 0 &&
+		(p2model - p1model).cross(planeIntersect - p1model).dot(normal) >= 0 &&
+		(p0model - p2model).cross(planeIntersect - p2model).dot(normal) >= 0) {
+		intersection_occured = true;
+		cout << planeIntersect << endl;
+	}
+
+	if (t_value <= 0) {
+		intersection_occured = false;
+	}		
+
+	if (intersection_occured && (ray.intersection.none || t_value < ray.intersection.t_value)) {
+		intersection_overwrite = true;
+		Intersection intersection;
+		intersection.normal = worldToModel.transpose() * normal;
+		intersection.point = modelToWorld * planeIntersect;
+		intersection.t_value = t_value;
+		intersection.none = false;
+		ray.intersection = intersection;
+	}
+	
 	return intersection_occured && intersection_overwrite;
 }
