@@ -13,9 +13,7 @@ void AreaLight::shade( Ray3D& ray ) {
         Vector3D lightToObject = ray.intersection.point - pointOnLight;
         lightToObject.normalize();
         Ray3D rayLightToObjectWorldSpace = Ray3D(pointOnLight, lightToObject);
-        Matrix4x4 modelToWorld;
-        Matrix4x4 worldToModel;
-        r.traverseScene(r._root, rayLightToObjectWorldSpace, modelToWorld, worldToModel);
+        r.traverseScene(r._root, rayLightToObjectWorldSpace);
 
         if (rayLightToObjectWorldSpace.intersection.point == ray.intersection.point) {
             pointLight.setPosition(pointOnLight);

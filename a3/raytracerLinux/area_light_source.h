@@ -1,8 +1,6 @@
 #include "light_source.h"
 #include "raytracer.h"
 
-#define NUM_SHADOW_RAYS 15
-
 // A rectangular light source
 class AreaLight : public LightSource {
 public:

@@ -18,6 +18,22 @@
 #include "scene_object.h"
 #include "light_source.h"
 
+/* Feature tags */
+#define SHADOWS
+// warn: mildly expensive
+// #define SOFT_SHADOWS
+// warn: extremely expensive
+// #define DOF
+
+/* Feature params */
+#define SHADE_DEPTH 2
+#define NUM_THREADS 4
+#define NUM_SHADOW_RAYS 50
+#define FOCAL_DISTANCE      -5
+#define NUM_APERTURE_RAYS   200
+#define APERTURE            2
+
+
 // Linked list containing light sources in the scene.
 struct LightListNode {
 	LightListNode() : light(NULL), next(NULL) {}
@@ -108,7 +124,11 @@ public:
 	// Traversal code for the scene graph, the ray is transformed into 
 	// the object space of each node where intersection is performed.
 	void traverseScene( SceneDagNode* node, Ray3D& ray, Matrix4x4 modelToWorld, Matrix4x4 worldToModel );
-
+	void traverseScene( SceneDagNode* node, Ray3D& ray ) {
+		Matrix4x4 modelToWorld;
+		Matrix4x4 worldToModel;
+		traverseScene(node, ray, modelToWorld, worldToModel);
+	}
 	// for pthreads
 	typedef struct {
 		int iStart;
@@ -147,7 +167,7 @@ private:
 
 	// Return the colour of the ray after intersection and shading, call 
 	// this function recursively for reflection and refraction.  
-	Colour shadeRay( Ray3D& ray, int depth, Matrix4x4 modelToWorld, Matrix4x4 worldToModel );
+	Colour shadeRay( Ray3D& ray, int depth );
 
 	// Constructs a view to world transformation matrix based on the
 	// camera parameters.
