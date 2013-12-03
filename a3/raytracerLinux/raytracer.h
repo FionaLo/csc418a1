@@ -109,6 +109,32 @@ public:
 	// the object space of each node where intersection is performed.
 	void traverseScene( SceneDagNode* node, Ray3D& ray );
 
+	// for pthreads
+	typedef struct {
+		int iStart;
+		int iEnd;
+		Point3D eye;
+		Vector3D view;
+		Vector3D up;
+		double fov;
+		Raytracer* r;
+	} ThreadParam;
+
+    static void* tracer_helper(void *args) {
+    	ThreadParam* param = (ThreadParam *) args;
+    	int iStart = param->iStart;
+    	int iEnd = param->iEnd;
+    	Point3D eye = param->eye;
+    	Vector3D view = param->view;
+    	Vector3D up = param->up;
+    	double fov = param->fov;
+    	Raytracer* r = param->r;
+        r->doRender(iStart, iEnd, eye, view, up, fov);
+        return NULL;
+    }
+
+    void doRender(int iStart, int iEnd, Point3D eye, Vector3D view, Vector3D up, double fov);
+
 	
 private:
 	// Allocates and initializes the pixel buffer for rendering, you

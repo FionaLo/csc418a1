@@ -16,11 +16,15 @@
 #include <cmath>
 #include <iostream>
 #include <cstdlib>
+#include <pthread.h>
+#include <vector>
+#include <assert.h>
 #include "area_light_source.h"
 
 using namespace std;
-#define SHADE_DEPTH 2
-#define SHADOWS
+#define SHADE_DEPTH 1
+// #define SHADOWS
+#define NUM_THREADS 1
 // turns on soft shadows - control the number of rays in area_light_source.h
 // #define SOFT_SHADOWS
 
@@ -283,16 +287,47 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 
 void Raytracer::render( int width, int height, Point3D eye, Vector3D view, 
 		Vector3D up, double fov, char* fileName ) {
-	Matrix4x4 viewToWorld;
+
 	_scrWidth = width;
 	_scrHeight = height;
-	double factor = (double(height)/2)/tan(fov*M_PI/360.0);
 
 	initPixelBuffer();
+
+	pthread_t threads[NUM_THREADS];
+	for (int k = 0; k < NUM_THREADS; k++) {
+		// sizes are assumed to be divisible by NUM_THREADS
+		ThreadParam* threadParam = (ThreadParam*) malloc(sizeof(ThreadParam));
+		threadParam->iStart = k * height / NUM_THREADS;
+		threadParam->iEnd = (k + 1) * height / NUM_THREADS;
+		threadParam->eye = eye;
+		threadParam->view = view;
+		threadParam->up = up;
+		threadParam->fov = fov;
+		threadParam->r = this;
+		pthread_create(&threads[k], NULL, &Raytracer::tracer_helper, threadParam); 
+	}
+
+	for (int i = 0; i < NUM_THREADS; i++) {
+		pthread_join(threads[i], NULL);
+	}
+	cout << "THREADS JOINED" << endl;
+
+	flushPixelBuffer(fileName);
+}
+ 
+void Raytracer::doRender(int iStart, int iEnd, Point3D eye, Vector3D view, Vector3D up, double fov) {
+	cout << "New thread starting" << endl;
+	// Construct a ray for each pixel.
+	int width = _scrWidth;
+	int height = _scrHeight;
+	Matrix4x4 viewToWorld;
+	cout << "here" << endl;
+
+	double factor = (double(height)/2)/tan(fov*M_PI/360.0);
+
 	viewToWorld = initInvViewMatrix(eye, view, up);
 
-	// Construct a ray for each pixel.
-	for (int i = 0; i < _scrHeight; i++) {
+	for (int i = iStart; i < iEnd; i++) {
 		for (int j = 0; j < _scrWidth; j++) {
 			// Sets up ray origin and direction in view space, 
 			// image plane is at z = -1.
@@ -314,8 +349,7 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view,
 			_bbuffer[i*width+j] = int(col[2]*255);
 		}
 	}
-
-	flushPixelBuffer(fileName);
+	cout << "Thread complete" << endl;
 }
 
 void Raytracer::setAmbientLight(Colour colour) {
@@ -340,6 +374,8 @@ int main(int argc, char* argv[])
 		width = atoi(argv[1]);
 		height = atoi(argv[2]);
 	}
+
+	assert(height % NUM_THREADS == 0);
 
 	// Camera parameters.
 	Point3D eye(0, 0, 1);

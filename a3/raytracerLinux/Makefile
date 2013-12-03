@@ -1,6 +1,6 @@
-CC = g++
+CC = g++ 
 CFLAGS = -g -O2 
-LIBS = -lm
+LIBS = -lm -lpthread
 
 raytracer:  raytracer.o util.o light_source.o scene_object.o bmp_io.o cylinder.o area_light_source.o
 	$(CC) $(CFLAGS) -o raytracer \
