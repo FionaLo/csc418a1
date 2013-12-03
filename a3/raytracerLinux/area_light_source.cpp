@@ -8,7 +8,6 @@ void AreaLight::shade( Ray3D& ray ) {
 
         double uScale = (double)rand() / RAND_MAX;
         double vScale = (double)rand() / RAND_MAX;
-
         // pick a point somewhere on the light
         Point3D pointOnLight = pos + uScale * uLength * u + vScale * vLength * v;  
         Vector3D lightToObject = ray.intersection.point - pointOnLight;
