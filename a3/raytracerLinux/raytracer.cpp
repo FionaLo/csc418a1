@@ -18,7 +18,11 @@
 #include <cstdlib>
 
 using namespace std;
-#define SHADE_DEPTH 10
+#define SHADE_DEPTH         2
+#define FOCAL_DISTANCE      -5
+#define NUM_APERTURE_RAYS   200
+#define APERTURE            2
+#define DOF
 
 Raytracer::Raytracer() : _lightSource(NULL) {
 	_root = new SceneDagNode();
@@ -269,15 +273,27 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth ) {
 	return col; 
 }	
 
+double fRand(double fMin, double fMax)
+{
+    double f = (double)rand() / RAND_MAX;
+//    cout << "f is " << f << endl;
+    return fMin + f * (fMax - fMin);
+}
+
+
 void Raytracer::render( int width, int height, Point3D eye, Vector3D view, 
 		Vector3D up, double fov, char* fileName ) {
 	Matrix4x4 viewToWorld;
 	_scrWidth = width;
 	_scrHeight = height;
 	double factor = (double(height)/2)/tan(fov*M_PI/360.0);
+    srand(1);
 
 	initPixelBuffer();
 	viewToWorld = initInvViewMatrix(eye, view, up);
+    
+    double z_focus_intersect = FOCAL_DISTANCE;
+    double x_focus_intersect, y_focus_intersect;
 
 	// Construct a ray for each pixel.
 	for (int i = 0; i < _scrHeight; i++) {
@@ -290,14 +306,46 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view,
 			imagePlane[1] = (-double(height)/2 + 0.5 + i)/factor;
 			imagePlane[2] = -1;
 
-			// TODO: Convert ray to world space and call 
-			// shadeRay(ray) to generate pixel colour. 	
-			Ray3D rayViewSpace(origin, imagePlane - origin);
-			Ray3D rayWorldSpace(viewToWorld * rayViewSpace.origin, viewToWorld * rayViewSpace.dir);
-			
-			Colour col = shadeRay(rayWorldSpace, SHADE_DEPTH); 
+#ifdef DOF
+            cout << "Height " << i << "Width " << j << endl;
+            Colour col(0.0, 0.0, 0.0);
+            // Cast ray from center of eye (center of aperture), through pixel of interest
+            // to the focus plane.
+            // Find point of intersection. TODO: origin might be wrong, maybe eye?
+            Vector3D ray_dir = imagePlane - origin;
+            ray_dir.normalize();
+            double t_intersect = z_focus_intersect / ray_dir[2];
+            double x_focus_intersect = t_intersect * ray_dir[0];
+            double y_focus_intersect = t_intersect * ray_dir[1]; 
+            
+            Point3D focus_point(x_focus_intersect, y_focus_intersect, z_focus_intersect);
 
-			_rbuffer[i*width+j] = int(col[0]*255);
+            // Randomly cast rays from within aperture towards the focus point and capture color.
+            for (int k = 0; k < NUM_APERTURE_RAYS; k++) {
+                double aperture_theta  = fRand(0,2 * (double)M_PI);
+                double aperture_radius = fRand(0,(double) APERTURE);
+                Point3D ray_origin(cos(aperture_theta ) * aperture_radius, sin(aperture_theta) * aperture_radius, 0);
+
+			    // TODO: Convert ray to world space and call 
+			    // shadeRay(ray) to generate pixel colour. 	
+                Ray3D rayViewSpace(ray_origin, focus_point - ray_origin);     
+			    Ray3D rayWorldSpace(viewToWorld * rayViewSpace.origin, viewToWorld * rayViewSpace.dir);
+                
+                // Sum up final colour
+                col = col + shadeRay(rayWorldSpace, SHADE_DEPTH);
+            }
+          
+            // Find the final average colour
+            col = (double) 1/NUM_APERTURE_RAYS * col;
+#else
+            // TODO: Convert ray to world space and call 
+            // shadeRay(ray) to generate pixel colour.         
+            Ray3D rayViewSpace(origin, imagePlane - origin);
+            Ray3D rayWorldSpace(viewToWorld * rayViewSpace.origin, viewToWorld * rayViewSpace.dir);
+            
+            Colour col = shadeRay(rayWorldSpace, SHADE_DEPTH); 
+#endif
+            _rbuffer[i*width+j] = int(col[0]*255);
 			_gbuffer[i*width+j] = int(col[1]*255);
 			_bbuffer[i*width+j] = int(col[2]*255);
 		}
@@ -357,21 +405,21 @@ int main(int argc, char* argv[])
 	
 	// Apply some transformations to the unit square.
 	double factor1[3] = { 1.0, 2.0, 1.0 };
-	double factor2[3] = { 6.0, 6.0, 6.0 };
+	double factor2[3] = { 15.0, 15.0, 15.0 };
 	double factor3[3] = { 0.4, 0.4, 0.4 };
-	raytracer.translate(sphere, Vector3D(0, 0, -5));	
+	raytracer.translate(sphere, Vector3D(4, 0, -5));	
 	raytracer.rotate(sphere, 'x', -45); 
 	raytracer.rotate(sphere, 'z', 45); 
 	raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
 
-	raytracer.translate(sphere2, Vector3D(-3, 0, -5));	
+	raytracer.translate(sphere2, Vector3D(-3, 0, -10));	
 
 	raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
 	raytracer.translate(sphere3, Vector3D(0, 1, -4));	
 
 
 
-	raytracer.translate(plane, Vector3D(0, 0, -7));	
+	raytracer.translate(plane, Vector3D(0, 0, -15));	
 	raytracer.rotate(plane, 'z', 45); 
 	raytracer.scale(plane, Point3D(0, 0, 0), factor2);
 
