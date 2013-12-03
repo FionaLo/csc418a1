@@ -89,6 +89,8 @@ public:
 	void setAmbientLight(Colour colour);
 	Colour getAmbientLight();
 
+
+
 	// Transformation functions are implemented by right-multiplying 
 	// the transformation matrix to the node's transformation matrix.
 	
@@ -112,7 +114,11 @@ private:
 
 	// Return the colour of the ray after intersection and shading, call 
 	// this function recursively for reflection and refraction.  
-	Colour shadeRay( Ray3D& ray , int depth); 
+	Colour shadeRay( Ray3D& ray, int depth, bool debug );
+	Colour shadeRay( Ray3D& ray , int depth) {
+		return shadeRay(ray, depth, false);
+	} 
+	
 
 	// Constructs a view to world transformation matrix based on the
 	// camera parameters.

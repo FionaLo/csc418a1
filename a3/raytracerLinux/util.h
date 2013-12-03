@@ -137,10 +137,11 @@ Colour operator *(double s, const Colour& c);
 Colour operator +(const Colour& u, const Colour& v); 
 std::ostream& operator <<(std::ostream& o, const Colour& c); 
 
-struct Material {
+class Material {
+public:
 	Material( Colour ambient, Colour diffuse, Colour specular, double exp ) :
-		ambient(ambient), diffuse(diffuse), specular(specular), 
-		specular_exp(exp) {}
+		ambient(ambient), diffuse(diffuse), specular(specular), specular_exp(exp) {
+			indexOfRefraction = 1.0; }
 	
 	// Ambient components for Phong shading.
 	Colour ambient; 
@@ -150,6 +151,10 @@ struct Material {
 	Colour specular;
 	// Specular expoent.
 	double specular_exp;
+	double indexOfRefraction;
+	bool isDieletric() { return indexOfRefraction > 0; }
+
+
 };
 
 struct Intersection {
