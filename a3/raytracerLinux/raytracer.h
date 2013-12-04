@@ -103,6 +103,8 @@ public:
 	SceneDagNode* addObject( SceneDagNode* parent, SceneObject* obj, 
 			Material* mat );
 
+	SceneDagNode* loadTriangeMesh(std::string filename, Material* material);
+
 	// Add a light source.
 	LightListNode* addLightSource( LightSource* light );
 	void setAmbientLight(Colour colour);
@@ -157,6 +159,7 @@ public:
 
 	
 private:
+
 	// Allocates and initializes the pixel buffer for rendering, you
 	// could add an interesting background to your scene by modifying 
 	// this function.

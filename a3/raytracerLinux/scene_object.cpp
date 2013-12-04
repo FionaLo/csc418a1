@@ -122,13 +122,8 @@ bool NullObject::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
     return false;
 }
 
-MyTriangle::MyTriangle(Vector3D norm, Point3D a, Point3D b, Point3D c) {
-	n = norm;
-	p0 = a;
-	p1 = b;
-	p2 = c;
+MyTriangle::MyTriangle(Vector3D norm, Point3D a, Point3D b, Point3D c) : n(norm), p0(a), p1(b), p2(c) {}
 
-}
 bool MyTriangle::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 		const Matrix4x4& modelToWorld ) {
 
