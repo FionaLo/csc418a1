@@ -465,17 +465,40 @@ void defaultScene(Raytracer& raytracer) {
 }
 
 void spaceInvaders(Raytracer& raytracer) {
-	// // Define ambient lighting
-	// raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+	// Define ambient lighting
+	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
 
+    // Defines a point light source.
+    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
+                            Colour(0.9, 0.9, 0.9) ) );
 
- //    // Defines a point light source.
- //    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
- //                            Colour(0.9, 0.9, 0.9) ) );
+    double factor[3] = { 0.2, 0.2, 0.2 };
 
- //    double factor[3] = { 0.5, 0.5, 0.5 };
-	// SceneDagNode* space_invader = raytracer.loadTriangeMesh("space_invader.stl", &gold);
- //    raytracer.scale(space_invader, Point3D(0, 0, 0), factor);
+    // Top Row
+   	SceneDagNode* space_invaderTopMiddle = raytracer.loadTriangeMesh("space_invader.stl", &gold);
+    raytracer.translate(space_invaderTopMiddle, Vector3D(0, 20, -50));
+	raytracer.scale(space_invaderTopMiddle, Point3D(0, 0, 0), factor);
+
+	SceneDagNode* space_invaderTopLeft = raytracer.loadTriangeMesh("space_invader.stl", &gold);
+    raytracer.translate(space_invaderTopLeft, Vector3D(-30, 20, -50));
+	raytracer.scale(space_invaderTopLeft, Point3D(0, 0, 0), factor);
+
+	SceneDagNode* space_invaderTopRight = raytracer.loadTriangeMesh("space_invader.stl", &gold);
+    raytracer.translate(space_invaderTopRight, Vector3D(30, 20, -50));
+	raytracer.scale(space_invaderTopRight, Point3D(0, 0, 0), factor);
+
+    // Middle Row
+	SceneDagNode* space_invaderMiddleMiddle = raytracer.loadTriangeMesh("space_invader.stl", &gold);
+    raytracer.translate(space_invaderMiddleMiddle, Vector3D(0, 10, -70));
+	raytracer.scale(space_invaderMiddleMiddle, Point3D(0, 0, 0), factor);
+
+	SceneDagNode* space_invaderMiddleLeft = raytracer.loadTriangeMesh("space_invader.stl", &gold);
+    raytracer.translate(space_invaderMiddleLeft, Vector3D(-30, 10, -70));
+	raytracer.scale(space_invaderMiddleLeft, Point3D(0, 0, 0), factor);
+
+	SceneDagNode* space_invaderMiddleRight = raytracer.loadTriangeMesh("space_invader.stl", &gold);
+    raytracer.translate(space_invaderMiddleRight, Vector3D(30, 10, -70));
+	raytracer.scale(space_invaderMiddleRight, Point3D(0, 0, 0), factor);
 }
 
 int main(int argc, char* argv[])
@@ -496,13 +519,8 @@ int main(int argc, char* argv[])
 
 	assert(height % NUM_THREADS == 0);
 
-	// Camera parameters.
-	Point3D eye(0, 0, 1);
-	Vector3D view(0, 0, -1);
-	Vector3D up(0, 1, 0);
-	double fov = 60;
 
-	Scene scene = DEFAULT;
+	Scene scene = SPACE_INVADERS;
 	/* Define scene objects and transformations here */
 	switch(scene) {
 		case DEFAULT:
@@ -515,14 +533,21 @@ int main(int argc, char* argv[])
 			throw "No scene set";
 	}
 
+
+	// Camera parameters.
+	Point3D eye(0, 0, 1);
+	Vector3D view(0, 0, -1);
+	Vector3D up(0, 1, 0);
+	double fov = 60;
+
 	// Render the scene, feel free to make the image smaller for
 	// testing purposes.	
 	raytracer.render(width, height, eye, view, up, fov, (char*) "view1.bmp");
 	
 	// // Render it from a different point of view.
-	Point3D eye2(4, 2, 1);
-	Vector3D view2(-4, -2, -6);
-	raytracer.render(width, height, eye2, view2, up, fov, (char*) "view2.bmp");
+	// Point3D eye2(4, 2, 1);
+	// Vector3D view2(-4, -2, -6);
+	// raytracer.render(width, height, eye2, view2, up, fov, (char*) "view2.bmp");
 	
 	return 0;
 }
