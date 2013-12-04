@@ -180,8 +180,8 @@ bool UnitCone::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 		if (hit_bottom) {
 			normal = Vector3D(0, 0, -1.0);
 		} else {
-			// TODO:
-			normal = Vector3D(intersectionPointModelSpace[0], 0, intersectionPointModelSpace[2]);
+
+			normal = Vector3D(intersectionPointModelSpace[0], 1 - intersectionPointModelSpace[1], intersectionPointModelSpace[2]);
 		}
 		normal.normalize();
 		intersection.normal = worldToModel.transpose() * normal;
