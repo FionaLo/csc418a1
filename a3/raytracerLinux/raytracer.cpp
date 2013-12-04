@@ -282,24 +282,8 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 
 	// You'll want to call shadeRay recursively (with a different ray, 
 	// of course) here to implement reflection/refraction effects.  
-		
-		// if (!(ray.intersection.mat->specular == Colour(0, 0, 0))) {
-		// 	Vector3D oppositeRayDir = -ray.dir;
-		// 	oppositeRayDir.normalize();
-		// 	Vector3D normal = ray.intersection.normal;
-		// 	normal.normalize();
 
-		// 	Vector3D reflectionDirection = 2 * (oppositeRayDir.dot(normal)) * normal - oppositeRayDir;
-		// 	reflectionDirection.normalize();
-		// 	Ray3D reflectionRay = Ray3D(ray.intersection.point + 0.001 * reflectionDirection, reflectionDirection);
-		// 	Colour reflectionColour = shadeRay(reflectionRay, depth - 1);
-
-		// 	Vector3D distanceVector = ray.intersection.point - reflectionRay.intersection.point;
-		// 	double distance = distanceVector.length();
-		// 	double dampingFactor = 1.0 / pow(distance, 2.0);
-		// 	col = col +  dampingFactor * reflectionColour * ray.intersection.mat->specular;
-		// }
-
+		// Refraction effects:
 		if (ray.intersection.mat->isDieletric()) {
 
 			Vector3D d = ray.dir;
@@ -347,6 +331,22 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 				Colour refract = (1 - R) * shadeRay(transmittedRay, depth - 1, true);
 				col = col + k * (refract + reflect);
 			}
+			// material wasn't refractive, but it is reflective:
+		} else if (!(ray.intersection.mat->specular == Colour(0, 0, 0))) {
+				Vector3D oppositeRayDir = -ray.dir;
+				oppositeRayDir.normalize();
+				Vector3D normal = ray.intersection.normal;
+				normal.normalize();
+
+				Vector3D reflectionDirection = 2 * (oppositeRayDir.dot(normal)) * normal - oppositeRayDir;
+				reflectionDirection.normalize();
+				Ray3D reflectionRay = Ray3D(ray.intersection.point + 0.001 * reflectionDirection, reflectionDirection);
+				Colour reflectionColour = shadeRay(reflectionRay, depth - 1);
+
+				Vector3D distanceVector = ray.intersection.point - reflectionRay.intersection.point;
+				double distance = distanceVector.length();
+				double dampingFactor = 1.0 / pow(distance, 2.0);
+				col = col + dampingFactor * reflectionColour * ray.intersection.mat->specular;
 		}
 	}
 
