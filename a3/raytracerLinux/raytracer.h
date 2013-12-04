@@ -21,7 +21,7 @@
 /* Feature tags */
 // #define SHADOWS
 // warn: mildly expensive
-#define SOFT_SHADOWS
+// #define SOFT_SHADOWS
 // warn: extremely expensive
 // #define DOF
 
