@@ -147,7 +147,7 @@ class Material {
 public:
 	Material( Colour ambient, Colour diffuse, Colour specular, double exp ) :
 		ambient(ambient), diffuse(diffuse), specular(specular), specular_exp(exp) {
-			indexOfRefraction = 1.0; }
+			indexOfRefraction = 0.0; }
 	
 	// Ambient components for Phong shading.
 	Colour ambient; 
