@@ -243,22 +243,22 @@ void Raytracer::flushPixelBuffer( char *file_name ) {
 	delete _bbuffer;
 }
 
+/* Put the reflected direction in r */
 void reflect(Vector3D& d, Vector3D& n, Vector3D& r) {
 	r = d - (2 * (d.dot(n)) * n);
 	r.normalize();
 }
 
+/* Put the refracted direction in t. Returns false if total internal refraction */
 bool refract(Vector3D d, Vector3D n, double n1, Vector3D& t) {
 	double ddotn = d.dot(n);
-	double n2 = 1.0; // assume air
+	double n2 = 1.0; // assume air - basically all refractive objects are hollow
 	double sqrtTerm = sqrt(1.0 - ((pow(n1, 2) * (1 - pow(ddotn, 2))) / pow(n2, 2)));
 	if (sqrtTerm < 0) {
 		return false;
 	} 
 	Vector3D term1 = (1 / n2) * (n1 * (d - (ddotn * n)));
 	Vector3D term2 = sqrtTerm * n;
-//	term1.normalize();  // fishy... why normalize just yet...
-//	term2.normalize();  // fishy... why normalize just yet...
 	t = term1 - term2;
 	t.normalize();
 	return true;
@@ -314,6 +314,8 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 			Vector3D r;
 			reflect(d, n, r);
 
+			bool totalInternalReflection = false;
+
 			Ray3D reflectionRay = Ray3D(ray.intersection.point + EPSILON * r, r);
 
 			if (d.dot(n) < 0) {
@@ -322,7 +324,6 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 				k = Colour(1.0, 1.0, 1.0);
 			} else {
 				double t_val = ray.intersection.t_value;
-				// complete guess
 				double ar = 0.15 * ray.intersection.mat->diffuse[0]; 
 				double ag = 0.15 * ray.intersection.mat->diffuse[1];
 				double ab = 0.15 * ray.intersection.mat->diffuse[2];
@@ -330,26 +331,24 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 				kg = exp(-ag * t_val);
 				kb = exp(-ab * t_val);
 				k = Colour(kr, kg, kb);
-		//		k = Colour(1.0, 1.0, 1.0);
 				if (refract(d, -n, 1.0 / ray.intersection.mat->indexOfRefraction, t)) {
 					c = t.dot(n);
 				}
                 else {
 				    col = col + k * shadeRay(reflectionRay, depth - 1);
-				    //col = k * shadeRay(reflectionRay, depth - 1);
-					goto end;
+					totalInternalReflection = true;
 				}
 			}
-			Ray3D transmittedRay = Ray3D(ray.intersection.point + EPSILON * t, t);
-			double r0 = pow(ray.intersection.mat->indexOfRefraction - 1, 2) / pow(ray.intersection.mat->indexOfRefraction + 1, 2);
-			double R = r0 + (1 - r0) * pow(1 - c, 5);
-			Colour reflect = R * shadeRay(reflectionRay, depth - 1); 
-			Colour refract = (1 - R) * shadeRay(transmittedRay, depth - 1, true);
-			col = col + k * (refract + reflect);
-			//col = k * (refract + reflect);
+			if (!totalInternalReflection) {
+				Ray3D transmittedRay = Ray3D(ray.intersection.point + EPSILON * t, t);
+				double r0 = pow(ray.intersection.mat->indexOfRefraction - 1, 2) / pow(ray.intersection.mat->indexOfRefraction + 1, 2);
+				double R = r0 + (1 - r0) * pow(1 - c, 5);
+				Colour reflect = R * shadeRay(reflectionRay, depth - 1); 
+				Colour refract = (1 - R) * shadeRay(transmittedRay, depth - 1, true);
+				col = col + k * (refract + reflect);
+			}
 		}
 	}
-end:
 
 	col.clamp();
 	return col; 
