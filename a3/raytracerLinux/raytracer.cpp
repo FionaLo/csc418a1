@@ -471,6 +471,7 @@ int main(int argc, char* argv[])
 
 	// Defines a point light source.
 	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+
 	#ifdef SOFT_SHADOWS
 	raytracer.addLightSource( new AreaLight(Point3D(0, 0, 5), Vector3D(0, 1, 0), Vector3D(1, 0, 0), 1, 1,  
 				Colour(0.9, 0.9, 0.9), raytracer ));
@@ -480,7 +481,7 @@ int main(int argc, char* argv[])
 	#endif
 
 	SceneDagNode* humanoid = raytracer.loadTriangeMesh("humanoid.stl", &gold);
-	raytracer.translate(humanoid, Vector3D(0, -15, -25));
+	raytracer.translate(humanoid, Vector3D(10, -15, -13));
 	raytracer.rotate(humanoid, 'y', -90); 
 	raytracer.rotate(humanoid, 'x', -90); 
 
@@ -515,7 +516,7 @@ int main(int argc, char* argv[])
 	raytracer.scale(cylinder, Point3D(0, 0, 0), factor3);
 	raytracer.translate(cylinder, Vector3D(-1, -1, -1));
 
-	raytracer.translate(plane, Vector3D(0, 0, -30));	
+	raytracer.translate(plane, Vector3D(0, 0, -15));	
 	raytracer.rotate(plane, 'z', 45); 
 	raytracer.scale(plane, Point3D(0, 0, 0), factor2);
  

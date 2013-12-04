@@ -19,9 +19,9 @@
 #include "light_source.h"
 
 /* Feature tags */
-#define SHADOWS
+// #define SHADOWS
 // warn: mildly expensive
-// #define SOFT_SHADOWS
+#define SOFT_SHADOWS
 // warn: extremely expensive
 // #define DOF
 
