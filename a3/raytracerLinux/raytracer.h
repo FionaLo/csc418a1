@@ -33,6 +33,11 @@
 #define NUM_APERTURE_RAYS   200
 #define APERTURE            2
 
+/* A list of scenes we know how to render */
+enum Scene {
+	DEFAULT,
+	SPACE_INVADERS
+};
 
 // Linked list containing light sources in the scene.
 struct LightListNode {

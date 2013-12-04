@@ -427,6 +427,57 @@ SceneDagNode* Raytracer::loadTriangeMesh(string filename, Material* material) {
 
 }
 
+
+/* Defines materials */
+Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), 
+                Colour(0.628281, 0.555802, 0.366065), 
+                51.2 );
+Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
+                Colour(0.316228, 0.316228, 0.316228), 
+                12.8 );
+
+/* The default scene, given with the assignment */
+void defaultScene(Raytracer& raytracer) {
+
+	// Define ambient lighting
+	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+
+
+    // Defines a point light source.
+    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
+                            Colour(0.9, 0.9, 0.9) ) );
+
+    // Add a unit square into the scene with material mat.
+    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
+    
+    // Apply some transformations to the unit square.
+    double factor1[3] = { 1.0, 2.0, 1.0 };
+    double factor2[3] = { 6.0, 6.0, 6.0 };
+    raytracer.translate(sphere, Vector3D(0, 0, -5));        
+    raytracer.rotate(sphere, 'x', -45); 
+    raytracer.rotate(sphere, 'z', 45); 
+    raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
+
+    raytracer.translate(plane, Vector3D(0, 0, -7));        
+    raytracer.rotate(plane, 'z', 45); 
+    raytracer.scale(plane, Point3D(0, 0, 0), factor2);
+}
+
+void spaceInvaders(Raytracer& raytracer) {
+	// // Define ambient lighting
+	// raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+
+
+ //    // Defines a point light source.
+ //    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
+ //                            Colour(0.9, 0.9, 0.9) ) );
+
+ //    double factor[3] = { 0.5, 0.5, 0.5 };
+	// SceneDagNode* space_invader = raytracer.loadTriangeMesh("space_invader.stl", &gold);
+ //    raytracer.scale(space_invader, Point3D(0, 0, 0), factor);
+}
+
 int main(int argc, char* argv[])
 {	
 	// Build your scene and setup your camera here, by calling 
@@ -451,79 +502,19 @@ int main(int argc, char* argv[])
 	Vector3D up(0, 1, 0);
 	double fov = 60;
 
-	// Defines a material for shading.
-	Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), 
-			Colour(0.628281, 0.555802, 0.366065), 
-			51.2 );
-	Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
-			Colour(0.316228, 0.316228, 0.316228), 
-			12.8 );
-	// Material shiny( Colour(0, 0, 0), Colour(0.54, 0.0, 0.63), 
-	Material shiny( Colour(0, 0, 0), Colour(0.54, 0.0, 0.63),
-			Colour(0.0, 0.0, 0.0), 
-			30.0 );
-	Material highSphere( Colour(0, 0, 0), Colour(0.7, 0.05, 0.05), 
-			Colour(0.916228, 0.616228, 0.516228), 
-			45.0 );
-	Material weird( Colour(0.4, 0, 0.7), Colour(0.1, 0.445, 0.95), 
-			Colour(0.228, 0.628, 0.58), 
-			12.0 );
+	Scene scene = DEFAULT;
+	/* Define scene objects and transformations here */
+	switch(scene) {
+		case DEFAULT:
+			defaultScene(raytracer);
+			break;
+		case SPACE_INVADERS:
+			spaceInvaders(raytracer);
+			break;
+		default:
+			throw "No scene set";
+	}
 
-	// Defines a point light source.
-	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
-
-	#ifdef SOFT_SHADOWS
-	raytracer.addLightSource( new AreaLight(Point3D(0, 0, 5), Vector3D(0, 1, 0), Vector3D(1, 0, 0), 1, 1,  
-				Colour(0.9, 0.9, 0.9), raytracer ));
-	#else
-	raytracer.addLightSource( new PointLight(Point3D(0, 0, 5),  
-				Colour(0.9, 0.9, 0.9) ));
-	#endif
-
-	// SceneDagNode* space_invader = raytracer.loadTriangeMesh("space_invader.stl", &gold);
-	// raytracer.translate(space_invader, Vector3D(0, 10, -70));
-
-	// SceneDagNode* humanoid = raytracer.loadTriangeMesh("humanoid.stl", &gold);
-	// raytracer.translate(humanoid, Vector3D(10, -15, -13));
-	// raytracer.rotate(humanoid, 'y', -90); 
-	// raytracer.rotate(humanoid, 'x', -90); 
-
-	// Add a unit square into the scene with material mat.
-	// SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
-	// SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &shiny );
-	// SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &highSphere );
-
-	// SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
-	SceneDagNode* cylinder = raytracer.addObject( new UnitCone(), &gold );
-
-	// Apply some transformations to the unit square.
-	double factor1[3] = { 1.0, 2.0, 1.0 };
-	double factor2[3] = { 6.0, 6.0, 6.0 };
-	double factor3[3] = { 0.4, 0.4, 0.4 };
-	double cylinder_scale[3] = { 1.0, 2.0, 1.0 };
-
-	// raytracer.scale(cylinder, Point3D(0, 0, 0), cylinder_scale);
-	raytracer.rotate(cylinder, 'x', 30);
-	raytracer.translate(cylinder, Vector3D(0, -1, -4));
-
-
-	// raytracer.translate(sphere, Vector3D(0, 0, -5));	
-	// raytracer.rotate(sphere, 'x', -45); 
-	// raytracer.rotate(sphere, 'z', 45); 
-	// raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
-
-	// raytracer.translate(sphere2, Vector3D(-3, 0, -5));	
-
-	// raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
-	// raytracer.translate(sphere3, Vector3D(0, 1, -4));	
-
-	// raytracer.scale(cylinder, Point3D(0, 0, 0), factor3);
-	// raytracer.translate(cylinder, Vector3D(-1, -1, -1));
-
-	// raytracer.translate(plane, Vector3D(0, 0, -15));	
-	// raytracer.rotate(plane, 'z', 45); 
-	// raytracer.scale(plane, Point3D(0, 0, 0), factor2);
- 
 	// Render the scene, feel free to make the image smaller for
 	// testing purposes.	
 	raytracer.render(width, height, eye, view, up, fov, (char*) "view1.bmp");

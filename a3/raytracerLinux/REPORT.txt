@@ -1,0 +1,13 @@
+Overall submission:
+
+ program, and other submitted file structure. 
+
+External Resource:
+The files we read in for triangle meshes were convered using our script from stl files gotten from: http://people.sc.fsu.edu/~%20jburkardt/data/stla/stla.html
+Implementation details:
+Shirley, Peter, et al. Fundamentals of computer graphics. Natick: AK Peters, 2002.
+
+Role of each member on the project:
+Part A - done in collaboration
+Neil - Soft shadows, cones / cylinders, parallelization
+Jad - Depth of Field, Refraction, Triangle Mesh
