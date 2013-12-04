@@ -457,6 +457,7 @@ int main(int argc, char* argv[])
 	raytracer.translate(cylinder, Vector3D(3, 1, -5));
 
 
+	raytracer.translate(sphere, Vector3D(0, 0, -5)); 
 	raytracer.rotate(sphere, 'x', -45); 
 	raytracer.rotate(sphere, 'z', 45); 
 	raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
