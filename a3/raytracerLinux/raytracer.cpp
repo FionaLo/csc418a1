@@ -26,7 +26,7 @@ using namespace std;
 // #define SHADOWS
 #define NUM_THREADS 2
 // turns on soft shadows - control the number of rays in area_light_source.h
-// #define SOFT_SHADOWS
+#define SOFT_SHADOWS
 
 Raytracer::Raytracer() : _lightSource(NULL) {
 	_root = new SceneDagNode();
@@ -203,7 +203,9 @@ void Raytracer::computeShading( Ray3D& ray ) {
 	    	Vector3D lightToObject = ray.intersection.point - lightSource->get_position();
 	    	lightToObject.normalize();
 	    	Ray3D rayLightToObjectWorldSpace = Ray3D(lightSource->get_position(), lightToObject);
-	    	traverseScene(_root, rayLightToObjectWorldSpace);
+			Matrix4x4 modelToWorld;
+			Matrix4x4 worldToModel;
+	    	traverseScene(_root, rayLightToObjectWorldSpace, modelToWorld, worldToModel);
 
 	    	if (rayLightToObjectWorldSpace.intersection.point == ray.intersection.point) {
 				lightSource->shade(ray);
