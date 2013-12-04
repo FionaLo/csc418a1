@@ -497,6 +497,42 @@ SceneDagNode* Raytracer::loadTriangeMesh(string filename, Material* material) {
 }
 
 
+/* The default scene, given with the assignment */
+void defaultScene(Raytracer& raytracer) {
+
+	// // Define ambient lighting
+	// raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+
+ //    // Defines a point light source.
+ //    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
+ //                            Colour(0.9, 0.9, 0.9) ) );
+	// 			Colour(0.9, 0.9, 0.9)) );
+
+
+ //    // Add a unit square into the scene with material mat.
+ //    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
+ //    SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
+	// SceneDagNode* plane2 = raytracer.addObject( new UnitSquare(), &weird );
+	// SceneDagNode* leftWall = raytracer.addObject( new UnitSquare(), &shiny );
+	// SceneDagNode* front = raytracer.addObject( new UnitSquare(), &green );
+	// SceneDagNode* rightWall = raytracer.addObject( new UnitSquare(), &red );
+    
+ //    // Apply some transformations to the unit square.
+ //    double factor1[3] = { 1.0, 2.0, 1.0 };
+ //    double factor2[3] = { 6.0, 6.0, 6.0 };
+	// raytracer.translate(sphere, Vector3D(0, 0, -5));	
+	// raytracer.rotate(sphere, 'x', -45); 
+	// raytracer.rotate(sphere, 'z', 45); 
+ //    raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
+	// raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
+ //    raytracer.translate(plane, Vector3D(0, 0, -7));        
+ //    raytracer.rotate(plane, 'z', 45); 
+ //    raytracer.scale(plane, Point3D(0, 0, 0), factor2);
+}
+
+void spaceInvaders(Raytracer& raytracer) {
+
+
 /* Defines materials */
 Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), 
                 Colour(0.628281, 0.555802, 0.366065), 
@@ -504,55 +540,20 @@ Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648),
 Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
                 Colour(0.316228, 0.316228, 0.316228), 
                 12.8 );
-	Material glass( Colour(0.0, 0.0, 0.0), Colour(0.0, 0.0, 0.0), 
-			Colour(0.0, 0.0, 0.0), 
-			0.0 );
-
-	Material green( Colour(0.0, 0.7, 0.0), Colour(0.0, 0.7, 0.0), 
-			Colour(0.0, 0.7, 0.0), 
-			10.0 );
-	Material red( Colour(0.7, 0.0, 0.0), Colour(0.7, 0.0, 0.0), 
-			Colour(0.7, 0.0, 0.0), 
-			10.0 );
-	Material blue( Colour(0.0, 0.0, 0.7), Colour(0.0, 0.0, 0.7), 
-			Colour(0.0, 0.0, 0.7), 
-			10.0 );
-
-	glass.indexOfRefraction = 1.05;
-
-/* The default scene, given with the assignment */
-void defaultScene(Raytracer& raytracer) {
-
-	// Define ambient lighting
-	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
-
-    // Defines a point light source.
-    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
-                            Colour(0.9, 0.9, 0.9) ) );
-				Colour(0.9, 0.9, 0.9)) );
-
-
-    // Add a unit square into the scene with material mat.
-    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
-    SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
-	SceneDagNode* plane2 = raytracer.addObject( new UnitSquare(), &weird );
-	SceneDagNode* leftWall = raytracer.addObject( new UnitSquare(), &shiny );
-	SceneDagNode* front = raytracer.addObject( new UnitSquare(), &green );
-	SceneDagNode* rightWall = raytracer.addObject( new UnitSquare(), &red );
-    
-    // Apply some transformations to the unit square.
-    double factor1[3] = { 1.0, 2.0, 1.0 };
-    double factor2[3] = { 6.0, 6.0, 6.0 };
-	raytracer.translate(sphere, Vector3D(0, 0, -5));	
-	raytracer.rotate(sphere, 'x', -45); 
-	raytracer.rotate(sphere, 'z', 45); 
-    raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
-	raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
-    raytracer.translate(plane, Vector3D(0, 0, -7));        
-    raytracer.rotate(plane, 'z', 45); 
-    raytracer.scale(plane, Point3D(0, 0, 0), factor2);
-}
-void spaceInvaders(Raytracer& raytracer) {
+Material glass( Colour(0.0, 0.0, 0.0), Colour(0.0, 0.0, 0.0), 
+		Colour(0.0, 0.0, 0.0), 
+		0.0 );
+Material green( Colour(0.0, 0.7, 0.0), Colour(0.0, 0.7, 0.0), 
+		Colour(0.0, 0.7, 0.0), 
+		10.0 );
+Material red( Colour(0.7, 0.0, 0.0), Colour(0.7, 0.0, 0.0), 
+		Colour(0.7, 0.0, 0.0), 
+		10.0 );
+Material blue( Colour(0.0, 0.0, 0.7), Colour(0.0, 0.0, 0.7), 
+		Colour(0.0, 0.0, 0.7), 
+		10.0 );
+glass.indexOfRefraction = 1.05;
+	
 	// Define ambient lighting
 	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
     // Defines a point light source.
@@ -617,34 +618,8 @@ int main(int argc, char* argv[])
 			throw "No scene set";
 	}
 
-
 	// Camera parameters.
 	Point3D eye(0, 0, 1);
-	Vector3D view(0, 0, -1);
-	Vector3D up(0, 1, 0);
-	double fov = 60;
-
-	raytracer.translate(plane2, Vector3D(0, -5, -5));	
-	raytracer.rotate(plane2, 'x', -90); 
-	raytracer.scale(plane2, Point3D(0, 0, 0), factor2);
-
-	raytracer.translate(leftWall, Vector3D(-5, 0, -5));	
-	raytracer.rotate(leftWall, 'y', 90); 
-	raytracer.scale(leftWall, Point3D(0, 0, 0), factor2);
-
-	raytracer.translate(roof, Vector3D(0, 5, -5));	
-	raytracer.rotate(roof, 'x', 90); 
-	raytracer.scale(roof, Point3D(0, 0, 0), factor2);
-
-	raytracer.translate(front, Vector3D(0, 0, 0));	
-	raytracer.scale(front, Point3D(0, 0, 0), factor2);
-
-	raytracer.translate(rightWall, Vector3D(5, 0, -5));	
-	raytracer.rotate(rightWall, 'y', 90); 
-	raytracer.scale(rightWall, Point3D(0, 0, 0), factor2);
-
-	// Camera parameters.
-	Point3D eye(0, 0, -2);
 	Vector3D view(0, 0, -1);
 	Vector3D up(0, 1, 0);
 	double fov = 60;
@@ -653,10 +628,10 @@ int main(int argc, char* argv[])
 	// testing purposes.	
 	raytracer.render(width, height, eye, view, up, fov, (char*) "view1.bmp");
 	
-	// // Render it from a different point of view.
-	// Point3D eye2(4, 2, 1);
-	// Vector3D view2(-4, -2, -6);
-	// raytracer.render(width, height, eye2, view2, up, fov, (char*) "view2.bmp");
+	// Render it from a different point of view.
+	Point3D eye2(4, 2, 1);
+	Vector3D view2(-4, -2, -6);
+	raytracer.render(width, height, eye2, view2, up, fov, (char*) "view2.bmp");
 	
 	return 0;
 }
