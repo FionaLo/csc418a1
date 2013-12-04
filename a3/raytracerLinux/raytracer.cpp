@@ -479,7 +479,6 @@ SceneDagNode* Raytracer::loadTriangeMesh(string filename, Material* material) {
 		ss >> a >> b >> c;
 		coords.push_back(Point3D(a, b, c));
 	}
-
     SceneDagNode* meshContainer = addObject( new NullObject(), material );
 
 	// format: normal, 3 coords, normal, 3 coords etc.
@@ -508,7 +507,18 @@ Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63),
 	Material glass( Colour(0.0, 0.0, 0.0), Colour(0.0, 0.0, 0.0), 
 			Colour(0.0, 0.0, 0.0), 
 			0.0 );
-	glass.indexOfRefraction = 1.1;
+
+	Material green( Colour(0.0, 0.7, 0.0), Colour(0.0, 0.7, 0.0), 
+			Colour(0.0, 0.7, 0.0), 
+			10.0 );
+	Material red( Colour(0.7, 0.0, 0.0), Colour(0.7, 0.0, 0.0), 
+			Colour(0.7, 0.0, 0.0), 
+			10.0 );
+	Material blue( Colour(0.0, 0.0, 0.7), Colour(0.0, 0.0, 0.7), 
+			Colour(0.0, 0.0, 0.7), 
+			10.0 );
+
+	glass.indexOfRefraction = 1.05;
 
 /* The default scene, given with the assignment */
 void defaultScene(Raytracer& raytracer) {
@@ -519,7 +529,6 @@ void defaultScene(Raytracer& raytracer) {
     // Defines a point light source.
     raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
                             Colour(0.9, 0.9, 0.9) ) );
-	raytracer.addLightSource( new PointLight(Point3D(0, 1, -5), 
 				Colour(0.9, 0.9, 0.9)) );
 
 
@@ -527,7 +536,9 @@ void defaultScene(Raytracer& raytracer) {
     SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
     SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
 	SceneDagNode* plane2 = raytracer.addObject( new UnitSquare(), &weird );
-	SceneDagNode* plane3 = raytracer.addObject( new UnitSquare(), &shiny );
+	SceneDagNode* leftWall = raytracer.addObject( new UnitSquare(), &shiny );
+	SceneDagNode* front = raytracer.addObject( new UnitSquare(), &green );
+	SceneDagNode* rightWall = raytracer.addObject( new UnitSquare(), &red );
     
     // Apply some transformations to the unit square.
     double factor1[3] = { 1.0, 2.0, 1.0 };
@@ -544,13 +555,11 @@ void defaultScene(Raytracer& raytracer) {
 void spaceInvaders(Raytracer& raytracer) {
 	// Define ambient lighting
 	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
-
     // Defines a point light source.
     raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
                             Colour(0.9, 0.9, 0.9) ) );
 
     double factor[3] = { 0.2, 0.2, 0.2 };
-
     // Top Row
    	SceneDagNode* space_invaderTopMiddle = raytracer.loadTriangeMesh("space_invader.stl", &gold);
     raytracer.translate(space_invaderTopMiddle, Vector3D(0, 20, -50));
@@ -563,12 +572,10 @@ void spaceInvaders(Raytracer& raytracer) {
 	SceneDagNode* space_invaderTopRight = raytracer.loadTriangeMesh("space_invader.stl", &gold);
     raytracer.translate(space_invaderTopRight, Vector3D(30, 20, -50));
 	raytracer.scale(space_invaderTopRight, Point3D(0, 0, 0), factor);
-
     // Middle Row
 	SceneDagNode* space_invaderMiddleMiddle = raytracer.loadTriangeMesh("space_invader.stl", &gold);
     raytracer.translate(space_invaderMiddleMiddle, Vector3D(0, 10, -70));
 	raytracer.scale(space_invaderMiddleMiddle, Point3D(0, 0, 0), factor);
-
 	SceneDagNode* space_invaderMiddleLeft = raytracer.loadTriangeMesh("space_invader.stl", &gold);
     raytracer.translate(space_invaderMiddleLeft, Vector3D(-30, 10, -70));
 	raytracer.scale(space_invaderMiddleLeft, Point3D(0, 0, 0), factor);
@@ -620,9 +627,28 @@ int main(int argc, char* argv[])
 	raytracer.translate(plane2, Vector3D(0, -5, -5));	
 	raytracer.rotate(plane2, 'x', -90); 
 	raytracer.scale(plane2, Point3D(0, 0, 0), factor2);
-	raytracer.translate(plane3, Vector3D(-5, 0, -5));	
-	raytracer.rotate(plane3, 'y', 90); 
-	raytracer.scale(plane3, Point3D(0, 0, 0), factor2);
+
+	raytracer.translate(leftWall, Vector3D(-5, 0, -5));	
+	raytracer.rotate(leftWall, 'y', 90); 
+	raytracer.scale(leftWall, Point3D(0, 0, 0), factor2);
+
+	raytracer.translate(roof, Vector3D(0, 5, -5));	
+	raytracer.rotate(roof, 'x', 90); 
+	raytracer.scale(roof, Point3D(0, 0, 0), factor2);
+
+	raytracer.translate(front, Vector3D(0, 0, 0));	
+	raytracer.scale(front, Point3D(0, 0, 0), factor2);
+
+	raytracer.translate(rightWall, Vector3D(5, 0, -5));	
+	raytracer.rotate(rightWall, 'y', 90); 
+	raytracer.scale(rightWall, Point3D(0, 0, 0), factor2);
+
+	// Camera parameters.
+	Point3D eye(0, 0, -2);
+	Vector3D view(0, 0, -1);
+	Vector3D up(0, 1, 0);
+	double fov = 60;
+
 	// Render the scene, feel free to make the image smaller for
 	// testing purposes.	
 	raytracer.render(width, height, eye, view, up, fov, (char*) "view1.bmp");
