@@ -103,7 +103,6 @@ void Raytracer::rotate( SceneDagNode* node, char axis, double angle ) {
 
 void Raytracer::translate( SceneDagNode* node, Vector3D trans ) {
 	Matrix4x4 translation;
-	
 	translation[0][3] = trans[0];
 	translation[1][3] = trans[1];
 	translation[2][3] = trans[2];
@@ -252,8 +251,8 @@ bool refract(Vector3D d, Vector3D n, double n1, Vector3D& t) {
 	} 
 	Vector3D term1 = (1 / n2) * (n1 * (d - (ddotn * n)));
 	Vector3D term2 = sqrtTerm * n;
-	term1.normalize();
-	term2.normalize();
+//	term1.normalize();  // fishy... why normalize just yet...
+//	term2.normalize();  // fishy... why normalize just yet...
 	t = term1 - term2;
 	t.normalize();
 	return true;
@@ -274,6 +273,9 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 	if (!ray.intersection.none) {
 		computeShading(ray); 
 		col = ray.col;
+
+	// You'll want to call shadeRay recursively (with a different ray, 
+	// of course) here to implement reflection/refraction effects.  
 		
 		// if (!(ray.intersection.mat->specular == Colour(0, 0, 0))) {
 		// 	Vector3D oppositeRayDir = -ray.dir;
@@ -313,20 +315,22 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 				c = -d.dot(n);
 				k = Colour(1.0, 1.0, 1.0);
 			} else {
-				// double t_val = ray.intersection.t_value;
-				// // complete guess
-				// double ar = 0.15 * ray.intersection.mat->diffuse[0]; 
-				// double ag = 0.15 * ray.intersection.mat->diffuse[1];
-				// double ab = 0.15 * ray.intersection.mat->diffuse[2];
-				// kr = exp(-ar * t_val);
-				// kg = exp(-ag * t_val);
-				// kb = exp(-ab * t_val);
-				// k = Colour(kr, kg, kb);
-				k = Colour(1.0, 1.0, 1.0);
+				double t_val = ray.intersection.t_value;
+				// complete guess
+				double ar = 0.15 * ray.intersection.mat->diffuse[0]; 
+				double ag = 0.15 * ray.intersection.mat->diffuse[1];
+				double ab = 0.15 * ray.intersection.mat->diffuse[2];
+				kr = exp(-ar * t_val);
+				kg = exp(-ag * t_val);
+				kb = exp(-ab * t_val);
+				k = Colour(kr, kg, kb);
+		//		k = Colour(1.0, 1.0, 1.0);
 				if (refract(d, -n, 1.0 / ray.intersection.mat->indexOfRefraction, t)) {
 					c = t.dot(n);
-				} else {
-					col = col + k * shadeRay(reflectionRay, depth - 1);
+				}
+                else {
+				    col = col + k * shadeRay(reflectionRay, depth - 1);
+				    //col = k * shadeRay(reflectionRay, depth - 1);
 					goto end;
 				}
 			}
@@ -336,11 +340,11 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 			Colour reflect = R * shadeRay(reflectionRay, depth - 1); 
 			Colour refract = (1 - R) * shadeRay(transmittedRay, depth - 1, true);
 			col = col + k * (refract + reflect);
+			//col = k * (refract + reflect);
 		}
 	}
 end:
-	// You'll want to call shadeRay recursively (with a different ray, 
-	// of course) here to implement reflection/refraction effects.  
+
 	col.clamp();
 	return col; 
 }	
@@ -428,12 +432,10 @@ int main(int argc, char* argv[])
 	Material weird( Colour(0.4, 0, 0.7), Colour(0.1, 0.445, 0.95), 
 			Colour(0.228, 0.628, 0.58), 
 			12.0 );
-	Material glass( Colour(0.5, 0.5, 0.5), Colour(0.5, 0.5, 0.5), 
-			Colour(0.5, 0.5, 0.5), 
-			3.0 );
-	glass.indexOfRefraction = 1.5;
-
-
+	Material glass( Colour(0.0, 0.0, 0.0), Colour(0.0, 0.0, 0.0), 
+			Colour(0.0, 0.0, 0.0), 
+			0.0 );
+	glass.indexOfRefraction = 1.1;
 
 	// Defines a point light source.
 	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
@@ -445,16 +447,17 @@ int main(int argc, char* argv[])
 
 	// Add a unit square into the scene with material mat.
 	SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &glass );
-	// SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &shiny );
-	// SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &highSphere );
-
+	SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &jade );
+	SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &glass );
 	SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &gold );
+	SceneDagNode* plane2 = raytracer.addObject( new UnitSquare(), &weird );
+	SceneDagNode* plane3 = raytracer.addObject( new UnitSquare(), &shiny );
 	// SceneDagNode* cylinder = raytracer.addObject( new UnitCylinder(), &weird );
 
 
 	// Apply some transformations to the unit square.
-	double factor1[3] = { 1.0, 2.0, 1.0 };
-	double factor2[3] = { 6.0, 6.0, 6.0 };
+	double factor1[3] = { 0.5, 0.5, 0.5 };
+	double factor2[3] = { 10.0, 10.0, 10.0 };
 	double factor3[3] = { 0.4, 0.4, 0.4 };
 	double cylinder_scale[3] = { 1.0, 2.0, 1.0 };
 
@@ -462,24 +465,25 @@ int main(int argc, char* argv[])
 	// raytracer.translate(cylinder, Vector3D(3, 1, -5));
 
 
-	raytracer.translate(sphere, Vector3D(0, 0, -5));	
-	raytracer.rotate(sphere, 'x', -45); 
-	raytracer.rotate(sphere, 'z', 45); 
-	// raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
-
-	// raytracer.translate(sphere2, Vector3D(-3, 0, -5));	
-
-	// raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
-	// raytracer.translate(sphere3, Vector3D(0, 1, -4));	
+	raytracer.translate(sphere, Vector3D(0, 0, -3));	
+	raytracer.translate(sphere2, Vector3D(0, 2, -5));	
+	raytracer.scale(sphere2, Point3D(0, 0, 0), factor1);
+	raytracer.translate(sphere3, Vector3D(-1, -1, -3.5));	
+	raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
 
 	// raytracer.scale(cylinder, Point3D(0, 0, 0), factor3);
 	// raytracer.translate(cylinder, Vector3D(-1, -1, -1));
 
 
-	raytracer.translate(plane, Vector3D(0, 0, -7));	
-	raytracer.rotate(plane, 'z', 45); 
+	raytracer.translate(plane, Vector3D(0, 0, -10));	
 	raytracer.scale(plane, Point3D(0, 0, 0), factor2);
  
+	raytracer.translate(plane2, Vector3D(0, -5, -5));	
+	raytracer.rotate(plane2, 'x', -90); 
+	raytracer.scale(plane2, Point3D(0, 0, 0), factor2);
+	raytracer.translate(plane3, Vector3D(-5, 0, -5));	
+	raytracer.rotate(plane3, 'y', 90); 
+	raytracer.scale(plane3, Point3D(0, 0, 0), factor2);
 	// Render the scene, feel free to make the image smaller for
 	// testing purposes.	
 	raytracer.render(width, height, eye, view, up, fov, (char*) "view1.bmp");
