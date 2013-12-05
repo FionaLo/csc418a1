@@ -5,22 +5,22 @@ Features
 Multithreading*:
 The scene is divided by height into NUM_THREADS sections, and each thread is responsible for those rows. 
 
-Hard Shadows:
+Hard Shadows (#define SHADOWS in raytracer.h to activate):
 In the shading mode, once a ray intersects with an object in the scene, we cast rays from all light sources towards that intersection point object and see if along the way it intersects with anything else. If it does, the object of interest takes on ambient light values, else we use the Phong model (or the rendertype of interest) to assign the final value.
 
 Reflection:
 When a ray hits an object if it has a specular colour, then we bounce another ray from it and add that contribution to the pixel. We damp by 1/distance squared and specular colour. 
 
 Refraction*:
-We use Beer’s Law to render refraction and Schlick to approximate Fresnel’s equations. When an object has an index of refraction greater than 0, we use this algorithm to generate both refraction and reflection, otherwise we use the method described under “Reflection”. Index of refraction is a public member added to the material class.
+We use Beer’s Law to render refraction and Schlick to approximate Fresnel’s equations. When an object has an index of refraction greater than 0, we use this algorithm to generate both refraction and reflection, otherwise we use the method described under “Reflection”. Index of refraction is a public member added to the material class. Make sure SHADE_DEPTH, defined in raytracer.h, is high enough to render refraction correctly else the object will be black.
 
 Cones and Cylinders*:
 Intersections for cones and cylinders are implemented. The equation for a unit cylinder is x^2 + z^2 = 1 with y between -0.5 and 0.5. Using the quadratic formula, we can solve for 2 t values. We also check for collisions with the top and bottom, and take the lowest valid t value. For cones we use a cone with equation x^2 + z^2 = (y - 1)^2 with y varying from 0 to 1. We proceed as above: use the quadratic formula to get the roots, and check the bottom, and take the lowest valid t value. 
 
-Depth of Field*:
+Depth of Field*: (#define DOF in raytracer.h to activate)
 The parameters for this feature are, size of aperture, focus plane, and number of rays cast. A ray is first cast from the eye through the pixel of interest towards the scene. The ray’s intersection with the focus plane is noted. A user defined number of rays (more is better) is randomly cast from around the eye (limited by aperture size) towards the point of intersection noted above. The ray will then hit an object which is not necessarily at the point of intersection noted above (and most likely won’t be) and the colour is recorded for that ray. All the rays’ colors are averaged out and assigned to the pixel of interset to create the blur effect. Intuitively, the closer an object is to the focus plane, the more likely that it’s final colour rendered on the pixel is it’s actual material colour (thus giving it a crisp appearance).
 
-Soft Shadows*:
+Soft Shadows* (#define SOFT_SHADOWS in raytracer.h to activate, remember to turn off SHADOWS before using this):
 An area light has been implemented, which takes an origin, 2 basis vectors, and a length along each of the two vectors to define an area. N points (50 for the images submitted) are randomly sampled from this area, and shading is performed as if there was a point light at each of these locations of 1/N the intensity.
 
 Triangle Mesh*:
