@@ -1,6 +1,54 @@
-Overall submission:
+Overall submission
+We opted to design six features aside from the mandatory ones. They are noted below the the * sign.
 
- program, and other submitted file structure. 
+Features
+Multithreading*:
+The scene is divided by height into NUM_THREADS sections, and each thread is responsible for those rows. 
+
+Hard Shadows:
+In the shading mode, once a ray intersects with an object in the scene, we cast rays from all light sources towards that intersection point object and see if along the way it intersects with anything else. If it does, the object of interest takes on ambient light values, else we use the Phong model (or the rendertype of interest) to assign the final value.
+
+Reflection:
+When a ray hits an object if it has a specular colour, then we bounce another ray from it and add that contribution to the pixel. We damp by 1/distance squared and specular colour. 
+
+Refraction*:
+We use Beer’s Law to render refraction and Schlick to approximate Fresnel’s equations. When an object has an index of refraction greater than 0, we use this algorithm to generate both refraction and reflection, otherwise we use the method described under “Reflection”. Index of refraction is a public member added to the material class.
+
+Cones and Cylinders*:
+Intersections for cones and cylinders are implemented. The equation for a unit cylinder is x^2 + z^2 = 1 with y between -0.5 and 0.5. Using the quadratic formula, we can solve for 2 t values. We also check for collisions with the top and bottom, and take the lowest valid t value. For cones we use a cone with equation x^2 + z^2 = (y - 1)^2 with y varying from 0 to 1. We proceed as above: use the quadratic formula to get the roots, and check the bottom, and take the lowest valid t value. 
+
+Depth of Field*:
+The parameters for this feature are, size of aperture, focus plane, and number of rays cast. A ray is first cast from the eye through the pixel of interest towards the scene. The ray’s intersection with the focus plane is noted. A user defined number of rays (more is better) is randomly cast from around the eye (limited by aperture size) towards the point of intersection noted above. The ray will then hit an object which is not necessarily at the point of intersection noted above (and most likely won’t be) and the colour is recorded for that ray. All the rays’ colors are averaged out and assigned to the pixel of interset to create the blur effect. Intuitively, the closer an object is to the focus plane, the more likely that it’s final colour rendered on the pixel is it’s actual material colour (thus giving it a crisp appearance).
+
+Soft Shadows*:
+An area light has been implemented, which takes an origin, 2 basis vectors, and a length along each of the two vectors to define an area. N points (50 for the images submitted) are randomly sampled from this area, and shading is performed as if there was a point light at each of these locations of 1/N the intensity.
+
+Triangle Mesh*:
+We parse ascii stl files into the following format: one line of 3 values describing the normal, followed by 3 lines of 3 values each describing the vertices of the triangle in counterclockwise order. For example: 
+nx ny nz
+v1x v1y v1z
+v2x v2y v2z
+v3x v3y v3z
+
+This file is then parsed, and triangle objects are created. We implemented triangle intersections.
+
+Files
+We submitted the following images:
+PartA:
+scene_signature.bmp  
+scene_signature2.bmp  
+diffuse_ambient.bmp   
+diffuse_ambient2.bmp 
+phong.bmp
+phong2.bmp     
+Part B:
+space_invaders1.bmp / space_invaders2.bmp - shows off triangle meshes
+old_space.bmp - shows off triangle mesh   
+quadratics1.bmp / quadratics2.bmp  - shows off cones, cylinders, reflections, hard shadows
+soft_shadows1.bmp / soft_shadows2.bmp - shows off soft shadows
+dofdemo.bmp - shows off depth of field
+refractiondemo_cam1.bmp - shows off refraction
+refractiondemo_cam2.bmp - shows off refraction
 
 External Resource:
 The files we read in for triangle meshes were convered using our script from stl files gotten from: http://people.sc.fsu.edu/~%20jburkardt/data/stla/stla.html
@@ -11,3 +59,8 @@ Role of each member on the project:
 Part A - done in collaboration
 Neil - Soft shadows, cones / cylinders, parallelization
 Jad - Depth of Field, Refraction, Triangle Mesh
+
+
+
+                          
+
