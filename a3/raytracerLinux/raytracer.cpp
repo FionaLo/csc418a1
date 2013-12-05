@@ -525,6 +525,9 @@ Material highSphere( Colour(0, 0, 0), Colour(0.7, 0.05, 0.05),
 Material weird( Colour(0.4, 0, 0.7), Colour(0.1, 0.445, 0.95), 
                 Colour(0.228, 0.628, 0.58), 
                 12.0 );
+Material glass( Colour(0.0, 0.0, 0.0), Colour(0.0, 0.0, 0.0),        
+        Colour(0.0, 0.0, 0.0),                                       
+        0.0 );                                                       
 
 void spaceInvaders(Raytracer& raytracer) {
 
@@ -634,6 +637,77 @@ void quadraticScene(Raytracer& raytracer) {
 
 }
 
+void refractionDemo(Raytracer& raytracer ){
+
+    // Defines a point light source.
+    raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5),
+                Colour(0.9, 0.9, 0.9)) );
+    raytracer.addLightSource( new PointLight(Point3D(0, 5, -5),
+                Colour(0.4, 0.4, 0.4)) );
+    glass.indexOfRefraction = 1.05;
+
+
+    // Add a unit square into the scene with material mat.
+    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &glass );
+    SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &jade );
+    SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &glass );
+    SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &gold );
+    SceneDagNode* plane2 = raytracer.addObject( new UnitSquare(), &weird );
+    SceneDagNode* plane3 = raytracer.addObject( new UnitSquare(), &shiny );
+
+    // Apply some transformations to the unit square.
+    double factor1[3] = { 0.5, 0.5, 0.5 };
+    double factor2[3] = { 10.0, 10.0, 10.0 };
+    double factor3[3] = { 0.4, 0.4, 0.4 };
+    double cylinder_scale[3] = { 1.0, 2.0, 1.0 };
+
+    raytracer.translate(sphere, Vector3D(0, 0, -3));
+    raytracer.translate(sphere2, Vector3D(-2, 0.4, -5));
+    raytracer.scale(sphere2, Point3D(0, 0, 0), factor1);
+    raytracer.translate(sphere3, Vector3D(-1, -1, -3.5));
+    raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
+
+    raytracer.translate(plane, Vector3D(0, 0, -10));
+    raytracer.scale(plane, Point3D(0, 0, 0), factor2);
+
+    raytracer.translate(plane2, Vector3D(0, -5, -5));
+    raytracer.rotate(plane2, 'x', -90);
+    raytracer.scale(plane2, Point3D(0, 0, 0), factor2);
+    raytracer.translate(plane3, Vector3D(-5, 0, -5));
+    raytracer.rotate(plane3, 'y', 90);
+    raytracer.scale(plane3, Point3D(0, 0, 0), factor2);
+
+}
+
+
+void dofDemo(Raytracer& raytracer ){
+    // Defines a point light source.
+    raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5),
+                Colour(0.9, 0.9, 0.9)) );
+    raytracer.addLightSource( new PointLight(Point3D(0, 5, -5),
+                Colour(0.4, 0.4, 0.4)) );
+
+
+    // Add a unit square into the scene with material mat.
+    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere4 = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere5 = raytracer.addObject( new UnitSphere(), &gold );
+
+    // Apply some transformations to the unit square.
+    raytracer.translate(sphere , Vector3D(-3  , -1  , -5));
+    raytracer.translate(sphere2, Vector3D(-1.5, -0.5, -7));
+    raytracer.translate(sphere3, Vector3D( 0  , -0  , -9));
+    raytracer.translate(sphere4, Vector3D( 1.5,  0.5, -11));
+    raytracer.translate(sphere5, Vector3D( 3  ,  1  , -13));
+
+}
+
+
+
 int main(int argc, char* argv[])
 {	
 	// Build your scene and setup your camera here, by calling 
@@ -667,6 +741,12 @@ int main(int argc, char* argv[])
 			break;
 		case QUADRATIC_SCENE:
 			quadraticScene(raytracer);
+			break;
+		case DOF_DEMO:
+			dofDemo(raytracer);
+			break;
+		case REFRACTION_DEMO:
+			refractionDemo(raytracer);
 			break;
 		default:
 			throw "No scene set";

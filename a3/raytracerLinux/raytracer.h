@@ -38,7 +38,9 @@ enum Scene {
 	DEFAULT,
 	SPACE_INVADERS,
 	SHAPE_SCENE,
-	QUADRATIC_SCENE
+	QUADRATIC_SCENE,
+	REFRACTION_DEMO,
+	DOF_DEMO
 };
 
 // Linked list containing light sources in the scene.
