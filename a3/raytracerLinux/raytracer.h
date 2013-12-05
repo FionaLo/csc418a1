@@ -19,16 +19,16 @@
 #include "light_source.h"
 
 /* Feature tags */
-// #define SHADOWS
+#define SHADOWS // turns on shadows. don't use in combo with soft shadows
 // warn: mildly expensive
-// #define SOFT_SHADOWS
+// #define SOFT_SHADOWS // turns on soft shadows. don't use in combo with hard shadows
 // warn: extremely expensive
-// #define DOF
+// #define DOF // turns on depth of field
 
 /* Feature params */
-#define SHADE_DEPTH 2
-#define NUM_THREADS 4
-#define NUM_SHADOW_RAYS 50
+#define SHADE_DEPTH 2 // controls how many rays to cast from an intersection for reflection and refraction
+#define NUM_THREADS 4 // the number of threads to use
+#define NUM_SHADOW_RAYS 50 // how many rays to cast if soft shadows are enbaled
 #define FOCAL_DISTANCE      -5
 #define NUM_APERTURE_RAYS   200
 #define APERTURE            2
@@ -36,7 +36,11 @@
 /* A list of scenes we know how to render */
 enum Scene {
 	DEFAULT,
-	SPACE_INVADERS
+	SPACE_INVADERS,
+	SHAPE_SCENE,
+	QUADRATIC_SCENE,
+	REFRACTION_DEMO,
+	DOF_DEMO
 };
 
 // Linked list containing light sources in the scene.
@@ -108,10 +112,12 @@ public:
 	SceneDagNode* addObject( SceneDagNode* parent, SceneObject* obj, 
 			Material* mat );
 
+	// load a triangle mesh object specified by the filename. Each triange is of the material passed in.
 	SceneDagNode* loadTriangeMesh(std::string filename, Material* material);
 
 	// Add a light source.
 	LightListNode* addLightSource( LightSource* light );
+
 	void setAmbientLight(Colour colour);
 	Colour getAmbientLight();
 
@@ -138,7 +144,8 @@ public:
 		Matrix4x4 worldToModel;
 		traverseScene(node, ray, modelToWorld, worldToModel);
 	}
-	// for pthreads
+
+	// Struct to pass info to pthreads
 	typedef struct {
 		int iStart;
 		int iEnd;
@@ -149,6 +156,7 @@ public:
 		Raytracer* r;
 	} ThreadParam;
 
+	// Used to call the member function of raytracer
     static void* tracer_helper(void *args) {
     	ThreadParam* param = (ThreadParam *) args;
     	int iStart = param->iStart;
@@ -162,6 +170,7 @@ public:
         return NULL;
     }
 
+    // do the rendering work
     void doRender(int iStart, int iEnd, Point3D eye, Vector3D view, Vector3D up, double fov);
 
 	

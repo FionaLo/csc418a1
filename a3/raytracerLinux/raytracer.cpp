@@ -198,13 +198,12 @@ void Raytracer::computeShading( Ray3D& ray ) {
 
 		// Implement shadows here if needed.
 		#ifdef SHADOWS
+			/* HARD SHADOWS */
+			// cast a ray out from the light to the object and see if the intersection is the same one found by the current ray. If not, its in shadow, so we skip shading
 	    	Vector3D lightToObject = ray.intersection.point - lightSource->get_position();
 	    	lightToObject.normalize();
 	    	Ray3D rayLightToObjectWorldSpace = Ray3D(lightSource->get_position(), lightToObject);
-			Matrix4x4 modelToWorld;
-			Matrix4x4 worldToModel;
-	    	traverseScene(_root, rayLightToObjectWorldSpace, modelToWorld, worldToModel);
-
+	    	traverseScene(_root, rayLightToObjectWorldSpace);
 	    	if (rayLightToObjectWorldSpace.intersection.point == ray.intersection.point) {
 				lightSource->shade(ray);
 	    	}
@@ -285,7 +284,7 @@ Colour Raytracer::shadeRay( Ray3D& ray, int depth, bool debug ) {
 
 		// Refraction effects:
 		if (ray.intersection.mat->isDieletric()) {
-
+			// algorithm from textbook for dieletrics
 			Vector3D d = ray.dir;
 			d.normalize();
 			Vector3D n = ray.intersection.normal;
@@ -371,8 +370,9 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view,
 
 	initPixelBuffer();
 	pthread_t threads[NUM_THREADS];
+	// distribute the work among threads by splitting the image into segments
 	for (int k = 0; k < NUM_THREADS; k++) {
-		// sizes are assumed to be divisible by NUM_THREADS
+		// Give threads the variables they need
 		ThreadParam* threadParam = (ThreadParam*) malloc(sizeof(ThreadParam));
 		threadParam->iStart = k * height / NUM_THREADS;
 		threadParam->iEnd = (k + 1) * height / NUM_THREADS;
@@ -384,6 +384,7 @@ void Raytracer::render( int width, int height, Point3D eye, Vector3D view,
 		pthread_create(&threads[k], NULL, &Raytracer::tracer_helper, threadParam); 
 	}
 
+	// wait for threads to finish
 	for (int i = 0; i < NUM_THREADS; i++) {
 		pthread_join(threads[i], NULL);
 	}
@@ -416,7 +417,7 @@ void Raytracer::doRender(int iStart, int iEnd, Point3D eye, Vector3D view, Vecto
             Colour col;
             // Cast ray from center of eye (center of aperture), through pixel of interest
             // to the focus plane.
-            // Find point of intersection. TODO: origin might be wrong, maybe eye?
+            // Find point of intersection.
             Vector3D ray_dir = imagePlane - origin;
             ray_dir.normalize();
             double t_intersect = z_focus_intersect / ray_dir[2];
@@ -500,91 +501,212 @@ SceneDagNode* Raytracer::loadTriangeMesh(string filename, Material* material) {
 /* The default scene, given with the assignment */
 void defaultScene(Raytracer& raytracer) {
 
-	// // Define ambient lighting
-	// raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
-
- //    // Defines a point light source.
- //    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
- //                            Colour(0.9, 0.9, 0.9) ) );
-	// 			Colour(0.9, 0.9, 0.9)) );
-
-
- //    // Add a unit square into the scene with material mat.
- //    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
- //    SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
-	// SceneDagNode* plane2 = raytracer.addObject( new UnitSquare(), &weird );
-	// SceneDagNode* leftWall = raytracer.addObject( new UnitSquare(), &shiny );
-	// SceneDagNode* front = raytracer.addObject( new UnitSquare(), &green );
-	// SceneDagNode* rightWall = raytracer.addObject( new UnitSquare(), &red );
-    
- //    // Apply some transformations to the unit square.
- //    double factor1[3] = { 1.0, 2.0, 1.0 };
- //    double factor2[3] = { 6.0, 6.0, 6.0 };
-	// raytracer.translate(sphere, Vector3D(0, 0, -5));	
-	// raytracer.rotate(sphere, 'x', -45); 
-	// raytracer.rotate(sphere, 'z', 45); 
- //    raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
-	// raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
- //    raytracer.translate(plane, Vector3D(0, 0, -7));        
- //    raytracer.rotate(plane, 'z', 45); 
- //    raytracer.scale(plane, Point3D(0, 0, 0), factor2);
 }
-
-void spaceInvaders(Raytracer& raytracer) {
-
 
 /* Defines materials */
 Material gold( Colour(0.3, 0.3, 0.3), Colour(0.75164, 0.60648, 0.22648), 
                 Colour(0.628281, 0.555802, 0.366065), 
                 51.2 );
+Material red( Colour(0.7, 0, 0), Colour(0.7, 0.05, 0.05), 
+                Colour(0.916228, 0.616228, 0.516228), 
+                45.0 );
+Material blue( Colour(0, 0, 0.7), Colour(0, 0.05, 0.8), 
+                Colour(0.916228, 0.616228, 0.516228), 
+                45.0 );
 Material jade( Colour(0, 0, 0), Colour(0.54, 0.89, 0.63), 
                 Colour(0.316228, 0.316228, 0.316228), 
                 12.8 );
-Material glass( Colour(0.0, 0.0, 0.0), Colour(0.0, 0.0, 0.0), 
-		Colour(0.0, 0.0, 0.0), 
-		0.0 );
-Material green( Colour(0.0, 0.7, 0.0), Colour(0.0, 0.7, 0.0), 
-		Colour(0.0, 0.7, 0.0), 
-		10.0 );
-Material red( Colour(0.7, 0.0, 0.0), Colour(0.7, 0.0, 0.0), 
-		Colour(0.7, 0.0, 0.0), 
-		10.0 );
-Material blue( Colour(0.0, 0.0, 0.7), Colour(0.0, 0.0, 0.7), 
-		Colour(0.0, 0.0, 0.7), 
-		10.0 );
-glass.indexOfRefraction = 1.05;
-	
+Material shiny( Colour(0, 0, 0), Colour(0.54, 0.0, 0.63),
+                Colour(0.0, 0.0, 0.0), 
+                30.0 );
+Material highSphere( Colour(0, 0, 0), Colour(0.7, 0.05, 0.05), 
+                Colour(0.916228, 0.616228, 0.516228), 
+                45.0 );
+Material weird( Colour(0.4, 0, 0.7), Colour(0.1, 0.445, 0.95), 
+                Colour(0.228, 0.628, 0.58), 
+                12.0 );
+Material glass( Colour(0.0, 0.0, 0.0), Colour(0.0, 0.0, 0.0),        
+        Colour(0.0, 0.0, 0.0),                                       
+        0.0 );                                                       
+
+void spaceInvaders(Raytracer& raytracer) {
+
 	// Define ambient lighting
 	raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
     // Defines a point light source.
-    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5), 
+    raytracer.addLightSource( new PointLight(Point3D(5, 40, -40), 
                             Colour(0.9, 0.9, 0.9) ) );
 
+
     double factor[3] = { 0.2, 0.2, 0.2 };
-    // Top Row
-   	SceneDagNode* space_invaderTopMiddle = raytracer.loadTriangeMesh("space_invader.stl", &gold);
-    raytracer.translate(space_invaderTopMiddle, Vector3D(0, 20, -50));
-	raytracer.scale(space_invaderTopMiddle, Point3D(0, 0, 0), factor);
+    double wallFactor[3] = { 100.0, 100.0, 100.0 };
 
-	SceneDagNode* space_invaderTopLeft = raytracer.loadTriangeMesh("space_invader.stl", &gold);
-    raytracer.translate(space_invaderTopLeft, Vector3D(-30, 20, -50));
-	raytracer.scale(space_invaderTopLeft, Point3D(0, 0, 0), factor);
-
-	SceneDagNode* space_invaderTopRight = raytracer.loadTriangeMesh("space_invader.stl", &gold);
-    raytracer.translate(space_invaderTopRight, Vector3D(30, 20, -50));
-	raytracer.scale(space_invaderTopRight, Point3D(0, 0, 0), factor);
-    // Middle Row
+    // Middle Row 
 	SceneDagNode* space_invaderMiddleMiddle = raytracer.loadTriangeMesh("space_invader.stl", &gold);
-    raytracer.translate(space_invaderMiddleMiddle, Vector3D(0, 10, -70));
+    raytracer.translate(space_invaderMiddleMiddle, Vector3D(0, 25, -70));
 	raytracer.scale(space_invaderMiddleMiddle, Point3D(0, 0, 0), factor);
 	SceneDagNode* space_invaderMiddleLeft = raytracer.loadTriangeMesh("space_invader.stl", &gold);
-    raytracer.translate(space_invaderMiddleLeft, Vector3D(-30, 10, -70));
+    raytracer.translate(space_invaderMiddleLeft, Vector3D(-13, 10, -75));
 	raytracer.scale(space_invaderMiddleLeft, Point3D(0, 0, 0), factor);
 
 	SceneDagNode* space_invaderMiddleRight = raytracer.loadTriangeMesh("space_invader.stl", &gold);
-    raytracer.translate(space_invaderMiddleRight, Vector3D(30, 10, -70));
+    raytracer.translate(space_invaderMiddleRight, Vector3D(13, 10, -65));
 	raytracer.scale(space_invaderMiddleRight, Point3D(0, 0, 0), factor);
+
+	SceneDagNode* wall = raytracer.addObject( new UnitSquare(), &jade );
+	raytracer.translate(wall, Vector3D(0, 0, -80));
+	raytracer.scale(wall, Point3D(0, 0, 0), wallFactor); 
+
 }
+
+void shapeScene(Raytracer& raytracer) {
+
+    // Defines a point light source.
+    raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+    raytracer.addLightSource( new AreaLight(Point3D(0, 0, 5), Vector3D(0, 1, 0), Vector3D(1, 0, 0), 0.3, 0.3,  
+                            Colour(0.9, 0.9, 0.9), raytracer ));
+
+    // Add a unit square into the scene with material mat.
+    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &shiny );
+    SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &highSphere );
+
+    SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
+    SceneDagNode* cylinder = raytracer.addObject( new UnitCylinder(), &weird );
+
+    // Apply some transformations to the unit square.
+    double factor1[3] = { 1.0, 2.0, 1.0 };
+    double factor2[3] = { 6.0, 6.0, 6.0 };
+    double factor3[3] = { 0.4, 0.4, 0.4 };
+    double cylinder_scale[3] = { 1.0, 2.0, 1.0 };
+
+    raytracer.scale(cylinder, Point3D(0, 0, 0), cylinder_scale);
+    raytracer.translate(cylinder, Vector3D(3, 1, -5));
+
+
+    raytracer.translate(sphere, Vector3D(0, 0, -5));        
+    raytracer.rotate(sphere, 'x', -45); 
+    raytracer.rotate(sphere, 'z', 45); 
+    raytracer.scale(sphere, Point3D(0, 0, 0), factor1);
+
+    raytracer.translate(sphere2, Vector3D(-3, 0, -5));        
+
+    raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
+    raytracer.translate(sphere3, Vector3D(0, 1, -4));        
+
+    raytracer.scale(cylinder, Point3D(0, 0, 0), factor3);
+    raytracer.translate(cylinder, Vector3D(-1, -1, -1));
+
+
+    raytracer.translate(plane, Vector3D(0, 0, -7));        
+    raytracer.rotate(plane, 'z', 45); 
+    raytracer.scale(plane, Point3D(0, 0, 0), factor2);
+}
+
+void quadraticScene(Raytracer& raytracer) {
+    // Defines a point light source.
+    raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+    // Defines a point light source.
+    raytracer.addLightSource( new PointLight(Point3D(2, 0, 5), 
+                            Colour(0.9, 0.9, 0.9) ) );
+
+    // Add a unit square into the scene with material mat.
+    SceneDagNode* cone1 = raytracer.addObject( new UnitCone(), &gold );
+    SceneDagNode* cylinder1 = raytracer.addObject( new UnitCylinder(), &jade );
+    SceneDagNode* cone2 = raytracer.addObject( new UnitCone(), &red );
+    SceneDagNode* cylinder2 = raytracer.addObject( new UnitCylinder(), &blue );
+    SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &jade );
+
+
+    double cylinder_scale[3] = { 1.0, 2.0, 1.0 };
+    double cone_scale[3] = { 2.0, 5.0, 2.0 };
+    double factor2[3] = { 100.0, 100.0, 6.0 };
+
+    raytracer.translate(cylinder1, Vector3D(3, -2, -5));
+    raytracer.scale(cylinder1, Point3D(0, 0, 0), cylinder_scale);
+
+    raytracer.translate(cone1, Vector3D(-3, -3, -5));
+    raytracer.scale(cone1, Point3D(0,0,0), cone_scale);
+
+    raytracer.translate(cone2, Vector3D(0, -3, -5));
+
+    raytracer.translate(cylinder2, Vector3D(3, 3, -10));
+
+    raytracer.translate(plane, Vector3D(0, 0, -12));        
+    raytracer.scale(plane, Point3D(0, 0, 0), factor2);
+
+}
+
+void refractionDemo(Raytracer& raytracer ){
+
+    // Defines a point light source.
+    raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5),
+                Colour(0.9, 0.9, 0.9)) );
+    raytracer.addLightSource( new PointLight(Point3D(0, 5, -5),
+                Colour(0.4, 0.4, 0.4)) );
+    glass.indexOfRefraction = 1.05;
+
+
+    // Add a unit square into the scene with material mat.
+    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &glass );
+    SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &jade );
+    SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &glass );
+    SceneDagNode* plane = raytracer.addObject( new UnitSquare(), &gold );
+    SceneDagNode* plane2 = raytracer.addObject( new UnitSquare(), &weird );
+    SceneDagNode* plane3 = raytracer.addObject( new UnitSquare(), &shiny );
+
+    // Apply some transformations to the unit square.
+    double factor1[3] = { 0.5, 0.5, 0.5 };
+    double factor2[3] = { 10.0, 10.0, 10.0 };
+    double factor3[3] = { 0.4, 0.4, 0.4 };
+    double cylinder_scale[3] = { 1.0, 2.0, 1.0 };
+
+    raytracer.translate(sphere, Vector3D(0, 0, -3));
+    raytracer.translate(sphere2, Vector3D(-2, 0.4, -5));
+    raytracer.scale(sphere2, Point3D(0, 0, 0), factor1);
+    raytracer.translate(sphere3, Vector3D(-1, -1, -3.5));
+    raytracer.scale(sphere3, Point3D(0, 0, 0), factor3);
+
+    raytracer.translate(plane, Vector3D(0, 0, -10));
+    raytracer.scale(plane, Point3D(0, 0, 0), factor2);
+
+    raytracer.translate(plane2, Vector3D(0, -5, -5));
+    raytracer.rotate(plane2, 'x', -90);
+    raytracer.scale(plane2, Point3D(0, 0, 0), factor2);
+    raytracer.translate(plane3, Vector3D(-5, 0, -5));
+    raytracer.rotate(plane3, 'y', 90);
+    raytracer.scale(plane3, Point3D(0, 0, 0), factor2);
+
+}
+
+
+void dofDemo(Raytracer& raytracer ){
+    // Defines a point light source.
+    raytracer.setAmbientLight(Colour(0.9, 0.9, 0.9));
+    raytracer.addLightSource( new PointLight(Point3D(0, 0, 5),
+                Colour(0.9, 0.9, 0.9)) );
+    raytracer.addLightSource( new PointLight(Point3D(0, 5, -5),
+                Colour(0.4, 0.4, 0.4)) );
+
+
+    // Add a unit square into the scene with material mat.
+    SceneDagNode* sphere = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere2 = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere3 = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere4 = raytracer.addObject( new UnitSphere(), &gold );
+    SceneDagNode* sphere5 = raytracer.addObject( new UnitSphere(), &gold );
+
+    // Apply some transformations to the unit square.
+    raytracer.translate(sphere , Vector3D(-3  , -1  , -5));
+    raytracer.translate(sphere2, Vector3D(-1.5, -0.5, -7));
+    raytracer.translate(sphere3, Vector3D( 0  , -0  , -9));
+    raytracer.translate(sphere4, Vector3D( 1.5,  0.5, -11));
+    raytracer.translate(sphere5, Vector3D( 3  ,  1  , -13));
+
+}
+
+
 
 int main(int argc, char* argv[])
 {	
@@ -614,6 +736,18 @@ int main(int argc, char* argv[])
 		case SPACE_INVADERS:
 			spaceInvaders(raytracer);
 			break;
+		case SHAPE_SCENE:
+			shapeScene(raytracer); 
+			break;
+		case QUADRATIC_SCENE:
+			quadraticScene(raytracer);
+			break;
+		case DOF_DEMO:
+			dofDemo(raytracer);
+			break;
+		case REFRACTION_DEMO:
+			refractionDemo(raytracer);
+			break;
 		default:
 			throw "No scene set";
 	}
@@ -630,7 +764,7 @@ int main(int argc, char* argv[])
 	
 	// Render it from a different point of view.
 	Point3D eye2(4, 2, 1);
-	Vector3D view2(-4, -2, -6);
+	Vector3D view2(-1, 0, -6);
 	raytracer.render(width, height, eye2, view2, up, fov, (char*) "view2.bmp");
 	
 	return 0;
