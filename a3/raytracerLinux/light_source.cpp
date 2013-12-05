@@ -11,11 +11,11 @@
 #include <cmath>
 #include "light_source.h"
 #include "area_light_source.h"
-        
-RenderType LightSource::RENDER_TYPE = SCENE_SIGNATURE;
+    
+/* Set the type of shading here */
+// RenderType LightSource::RENDER_TYPE = SCENE_SIGNATURE;
 // RenderType LightSource::RENDER_TYPE = DIFFUSE_AMBIENT; 
-// RenderType LightSource::RENDER_TYPE = PHONG; 
-
+RenderType LightSource::RENDER_TYPE = PHONG; 
 
 double dmax(double a, double b) {
     return a < b ? b : a;

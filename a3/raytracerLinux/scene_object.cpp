@@ -139,7 +139,7 @@ bool MyTriangle::intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 	double t_value = -(rayModelSpace.origin - p0).dot(n) / denom;
 	Point3D planeIntersect = rayModelSpace.point_at(t_value);
 
-
+	// see if the point is contained in the 3 half planes
 	if (((p1 - p0).cross(planeIntersect - p0)).dot(n) >= 0 &&
 		((p2 - p1).cross(planeIntersect - p1)).dot(n) >= 0 &&
 		((p0 - p2).cross(planeIntersect - p2)).dot(n) >= 0) {

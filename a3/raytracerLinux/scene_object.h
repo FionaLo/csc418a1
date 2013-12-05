@@ -46,6 +46,7 @@ public:
 			const Matrix4x4& modelToWorld );
 };
 
+// a container object for applying transforms to triangle meshes as a unit
 class NullObject : public SceneObject {
 	bool intersect( Ray3D& ray, const Matrix4x4& worldToModel,
 			const Matrix4x4& modelToWorld );

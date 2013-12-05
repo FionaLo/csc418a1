@@ -197,6 +197,7 @@ public:
 	// Current colour of the ray, should be computed by the shading
 	// function.
 	Colour col;
+	// returns the point at a given t value
 	Point3D point_at(double t_value);
 };
 
